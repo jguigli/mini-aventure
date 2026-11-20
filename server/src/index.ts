@@ -4,14 +4,18 @@ import express, { type ErrorRequestHandler } from "express";
 import {
   API_GENERATE_PATH,
   API_HEALTH_PATH,
+  API_REWRITE_PATH,
   GenerateRequest,
+  RewriteRequest,
+  type RewriteResponse,
   type GenerateResponse,
   type HealthResponse,
 } from "@shared/api";
 import { env, hasOpenAiKey, modelName } from "./env";
 import { toHttpError } from "./errors";
 import { generateStory, InvalidStoryError } from "./generate";
-import { callOpenAiForStory } from "./openai";
+import { callOpenAiForRewrite, callOpenAiForStory } from "./openai";
+import { rewriteScene } from "./rewrite";
 
 const app = express();
 app.use(express.json({ limit: "200kb" }));
@@ -52,6 +56,32 @@ app.post(API_GENERATE_PATH, async (req, res) => {
     console.error(`[generate] échec en ${seconds()} s (${httpError.status}) :`, error);
     if (error instanceof InvalidStoryError)
       console.error("[generate] problèmes restants :", error.issues);
+    res.status(httpError.status).json({ error: httpError.message });
+  }
+});
+
+// Scene rewrite (« ✨ Retravailler »): proposals only; the author keeps one or cancels.
+app.post(API_REWRITE_PATH, async (req, res) => {
+  const input = RewriteRequest.safeParse(req.body);
+  if (!input.success) {
+    res.status(400).json({ error: input.error.issues[0]?.message ?? "Requête invalide." });
+    return;
+  }
+
+  const started = Date.now();
+  const seconds = () => ((Date.now() - started) / 1000).toFixed(1);
+  try {
+    const { story, sceneId, instruction, variants } = input.data;
+    const result = await rewriteScene(story, sceneId, instruction, variants, callOpenAiForRewrite);
+    console.log(
+      `[rewrite] OK en ${seconds()} s, ${result.attempts} essai(s), ${result.variants.length} variante(s), ` +
+        `tokens entrée ${result.usage.inputTokens} / sortie ${result.usage.outputTokens}, scène « ${sceneId} »`,
+    );
+    const body: RewriteResponse = { variants: result.variants };
+    res.json(body);
+  } catch (error) {
+    const httpError = toHttpError(error);
+    console.error(`[rewrite] échec en ${seconds()} s (${httpError.status}) :`, httpError.message);
     res.status(httpError.status).json({ error: httpError.message });
   }
 });

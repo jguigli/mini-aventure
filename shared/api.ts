@@ -1,11 +1,12 @@
 // API contract shared by the client and the server.
 // Imported on both sides through the `@shared/*` alias.
 import { z } from "zod";
-import { ReadingLevel, type Story } from "./schema";
+import { ReadingLevel, Story, type SceneRewrite } from "./schema";
 import type { ValidationIssue } from "./validate";
 
 export const API_HEALTH_PATH = "/api/health";
 export const API_GENERATE_PATH = "/api/generate";
+export const API_REWRITE_PATH = "/api/rewrite";
 
 /** Maximum length of the author's idea (characters). */
 export const MAX_IDEA_LENGTH = 500;
@@ -43,4 +44,29 @@ export interface GenerateResponse {
    * lets the UI tell the author right away.
    */
   warnings: ValidationIssue[];
+}
+
+/** Maximum length of a free rewrite instruction (characters). */
+export const MAX_INSTRUCTION_LENGTH = 300;
+
+/** POST /api/rewrite body: the whole story (for context) and the scene to rewrite. */
+export const RewriteRequest = z.object({
+  story: Story,
+  sceneId: z.string(),
+  instruction: z
+    .string({ error: "La consigne est obligatoire." })
+    .trim()
+    .min(1, "Écris une consigne pour l'IA.")
+    .max(
+      MAX_INSTRUCTION_LENGTH,
+      `La consigne ne doit pas dépasser ${MAX_INSTRUCTION_LENGTH} caractères.`,
+    ),
+  /** 1 proposal, or 3 to choose from. */
+  variants: z.union([z.literal(1), z.literal(3)]).default(1),
+});
+export type RewriteRequest = z.input<typeof RewriteRequest>;
+
+/** POST /api/rewrite response: proposals, already checked by the server. */
+export interface RewriteResponse {
+  variants: SceneRewrite[];
 }

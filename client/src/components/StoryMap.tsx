@@ -26,6 +26,7 @@ type SceneNodeData = {
   mood: string;
   ending: "A" | "B" | null;
   isStart: boolean;
+  locked: boolean;
   unreachable: boolean;
   /** A real dead end: a narrative scene with no choices at all. */
   deadEnd: boolean;
@@ -57,6 +58,11 @@ const SceneNode = memo(function SceneNode({ data, selected }: NodeProps<SceneNod
       <span className="scene-node-title">{data.title || "Sans titre"}</span>
       <span className="scene-node-tags">
         {data.isStart && <span className="tag">Départ</span>}
+        {data.locked && (
+          <span className="tag" title="Verrouillée : l'IA n'y touche pas">
+            🔒
+          </span>
+        )}
         {data.ending && <span className="tag">Fin {data.ending}</span>}
         {data.unreachable && <span className="tag tag-muted">Inaccessible</span>}
         {warning && (
@@ -110,6 +116,7 @@ export function StoryMap({ story, analysis, selectedId, onSelect, testPath, test
         mood: scene.mood,
         ending: scene.ending?.kind ?? null,
         isStart: scene.id === story.startSceneId,
+        locked: scene.locked === true,
         unreachable: analysis.unreachable.has(scene.id),
         deadEnd: !scene.ending && scene.choices.length === 0,
         issueCount: analysis.issuesByScene.get(scene.id)?.length ?? 0,

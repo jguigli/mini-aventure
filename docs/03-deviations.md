@@ -373,3 +373,35 @@ Each entry gives: **Spec** (what 02 says) → **Done** (what was implemented) �
 
 ### Import limits
 - **Done:** files over 1 MB and empty files are refused with a message, and the same file can be imported twice in a row. Leaving the import screen with unsaved changes asks for confirmation (the import is not autosaved).
+
+---
+
+## Step 9 — AI editing
+
+### Scope: items 1, 3 and 4 done; 2 and 5 not done
+- **Spec:** five items by priority. (1) ✨ Retravailler une scène, (2) Vérifier la cohérence, (3) 3 variantes, (4) Verrouiller une scène 🔒, (5) Changer d'idée à partir d'une scène. Acceptance: item 1 at least.
+- **Done:** **1** (rewrite with preview and undo), **3** (3 variants in one call) and **4** (lock).
+- **Not done:** **2** (AI coherence review) and **5** (regenerate what follows a scene).
+- **Why:**
+  - 3 and 4 came almost for free with 1. Variants are the same call with `variants: 3`, and the lock is needed anyway for the server to refuse locked scenes.
+  - 2 and 5 are separate features with their own prompts, schemas and UI. Item 5 also rewires the graph, so it needs the whole validation and retry pipeline again.
+  - In a 4-hour budget, they are better left as documented next steps than done halfway.
+
+### The model never sees choice targets as editable
+- **Spec:** the server checks that the choice targets are unchanged.
+- **Done:** stronger, by construction.
+  - The rewrite schema (`SceneRewrite`) has **no target field at all**: choices come back as `{ id, label, emoji }`. The prompt shows where each choice leads (« mène à »), so labels stay coherent.
+  - The server checks that every proposal has **exactly the same choice ids, in the same order**, and an `endingLabel` if and only if the scene is an ending. Otherwise it retries once with the problems, then returns a 422.
+  - The client merges a kept proposal with `applySceneRewrite`, which takes only the words and keeps the scene id, ending kind, lock, and every choice's id and target.
+- **Why:** a check can be forgotten or wrong. A schema with no field to change cannot be. Even a proposal with reordered choices cannot move an arrow (unit-tested).
+
+### Rewrite request shape
+- **Spec:** `POST /api/rewrite { story, sceneId, instruction }` returns `{ scene }`.
+- **Done:** `{ story, sceneId, instruction, variants: 1 | 3 }` returns `{ variants: SceneRewrite[] }`.
+- **Why:** one shape covers items 1 and 3. Returning the words rather than a full `Scene` is what makes the targets impossible to change.
+
+### Quick actions send full instructions
+- **Done:** the four quick actions (Améliorer le style, Plus court, Plus de suspense, Adapter au niveau de lecture) send a precise French instruction (e.g. « Ajoute du suspense, sans rien d'effrayant pour l'âge du lecteur. »). The free instruction is limited to 300 characters and fenced in the prompt (`<consigne>`), like the idea. « Autre proposition » re-runs the last instruction.
+
+### One structured-call helper
+- **Done:** `server/src/openai.ts` now has one `callStructured(schema, name, instructions, messages)`, used by both generation and rewrite (same reasoning effort, refusal and truncation handling, and logs).

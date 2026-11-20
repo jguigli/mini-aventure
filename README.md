@@ -20,7 +20,8 @@ Work in progress, built step by step (see [`docs/steps/`](docs/steps/)). Deviati
 | 6    | Map editor: React Flow map, scene panel, live checks, quick test, .ink export                 | ✅     |
 | 7    | Reader: plays the compiled Ink, both endings, play from a scene, keyboard                     | ✅     |
 | 8    | Import (.ink in text mode) and export (.ink, compiled .json, view code), public inkle example | ✅     |
-| 9–10 | AI editing, polish                                                                            | ⏳     |
+| 9    | AI editing: rewrite a scene (preview, keep or cancel, undo), 3 variants, lock 🔒              | ✅     |
+| 10   | Accessibility pass, final README                                                              | ⏳     |
 
 ## Requirements
 
@@ -76,10 +77,11 @@ The browser calls `/api/*`, which the Vite dev server proxies to Express on port
 
 ## API
 
-| Route                | Body                                                               | Response                                                                                          |
-| -------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
-| `GET /api/health`    |                                                                    | `{ "ok": true, "openaiKey": true \| false }` (reports whether a key is set, never the key itself) |
-| `POST /api/generate` | `{ "idea": string, "readingLevel": "8-10" \| "11-12" \| "13-15" }` | `{ "story": Story }`, or `{ "error": string }` with a French message                              |
+| Route                | Body                                                                               | Response                                                                                                                                              |
+| -------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/health`    |                                                                                    | `{ "ok": true, "openaiKey": true \| false }` (reports whether a key is set, never the key itself)                                                     |
+| `POST /api/generate` | `{ "idea": string, "readingLevel": "8-10" \| "11-12" \| "13-15" }`                 | `{ "story": Story }`, or `{ "error": string }` with a French message                                                                                  |
+| `POST /api/rewrite`  | `{ "story": Story, "sceneId": string, "instruction": string, "variants": 1 \| 3 }` | `{ "variants": SceneRewrite[] }`: proposals with the words only (title, emoji, mood, text, choice labels and emojis, ending label), never the targets |
 
 Try it (one real, paid call, about 1–2 cents):
 
@@ -93,12 +95,13 @@ curl -X POST localhost:3001/api/generate -H 'content-type: application/json' \
 1. **Create**: type an idea, pick a reading level (8-10, 11-12 or 13-15), and click **« Générer l'aventure »**. Generation takes 10 to 20 s and can be cancelled. Or click **« Charger l'exemple »** to open the built-in story without calling the API.
 2. **Edit on the map**: each scene is a card (emoji, title, mood colour; ending A in green, ending B in purple), and each choice is an arrow. Click a scene to edit it in the side panel: title, emoji, mood, text, choices (label, emoji, target), plus « + Ajouter un choix », « + Nouvelle scène » and « Supprimer la scène ».
 3. **Live checks**: about 0.3 s after each change, the story is validated, serialized to Ink, compiled by inkjs and explored. Unreachable scenes turn grey and dashed, and problems get a ⚠️. **« Vérifier »** opens the full report. Problems warn, they never block.
-4. **Quick test**: under the map, click choices to walk through the story. The path lights up on the map, and « Réinitialiser » starts over.
-5. **Read**: switch to **📖 Lecture** in the header, or click **« ▶ Jouer depuis ici »** on a scene. The Reader plays the **compiled Ink** (not the JSON), with a big emoji, the scene title and text, and the choices as big buttons (Tab / Enter, or keys 1-9). At an ending it shows the ending's label, « Rejouer » and « Fins découvertes : x/2 ». **« ✏️ Modifier cette scène »** goes back to Édition with that scene selected.
-6. **Export**: **« ⬇ Exporter le .ink »** in the bottom bar (in Édition and in Lecture) downloads `<title>.ink`, serialized from the current story. **« Autres formats »** offers the **compiled `.json`**, which ink runtimes such as inkjs or the Unity plugin load, and **« Voir le code Ink »**, a dialog with a Copy button.
-7. **Import**: on the home screen, **« Importer un .ink »** opens any `.ink` file in **text mode**: a code editor and the player side by side, with the explorer's results (knots reached, endings, dead ends), updated as you type. Imported files are not shown on the map (an assumed choice: rebuilding our structure from arbitrary Ink is out of scope) and are not autosaved. **« Exemple Ink d'inkle »** opens the public example.
-8. **Undo / redo**: Ctrl+Z / Ctrl+Shift+Z (Cmd on macOS), or the ↶ / ↷ buttons. Typing in a field is undone in one step. Inside a text field, Ctrl+Z is the browser's own undo for that field.
-9. **Autosave**: the story is saved in the browser about 0.5 s after each change (« ✓ Enregistré »). After a refresh, the home screen offers **« Reprendre ton aventure »**.
+4. **✨ Retravailler avec l'IA** (in the scene panel): quick actions (« Améliorer le style », « Plus court », « Plus de suspense », « Adapter au niveau de lecture ») or a free instruction, with **1 or 3 proposals**. A **before/after preview** lets you **keep** a proposal or cancel. Keeping it is one undo step (Ctrl+Z restores the previous version). The AI only rewrites the words: **where each choice leads never changes**. **🔓 Verrouiller** a scene and the AI will not touch it.
+5. **Quick test**: under the map, click choices to walk through the story. The path lights up on the map, and « Réinitialiser » starts over.
+6. **Read**: switch to **📖 Lecture** in the header, or click **« ▶ Jouer depuis ici »** on a scene. The Reader plays the **compiled Ink** (not the JSON), with a big emoji, the scene title and text, and the choices as big buttons (Tab / Enter, or keys 1-9). At an ending it shows the ending's label, « Rejouer » and « Fins découvertes : x/2 ». **« ✏️ Modifier cette scène »** goes back to Édition with that scene selected.
+7. **Export**: **« ⬇ Exporter le .ink »** in the bottom bar (in Édition and in Lecture) downloads `<title>.ink`, serialized from the current story. **« Autres formats »** offers the **compiled `.json`**, which ink runtimes such as inkjs or the Unity plugin load, and **« Voir le code Ink »**, a dialog with a Copy button.
+8. **Import**: on the home screen, **« Importer un .ink »** opens any `.ink` file in **text mode**: a code editor and the player side by side, with the explorer's results (knots reached, endings, dead ends), updated as you type. Imported files are not shown on the map (an assumed choice: rebuilding our structure from arbitrary Ink is out of scope) and are not autosaved. **« Exemple Ink d'inkle »** opens the public example.
+9. **Undo / redo**: Ctrl+Z / Ctrl+Shift+Z (Cmd on macOS), or the ↶ / ↷ buttons. Typing in a field is undone in one step. Inside a text field, Ctrl+Z is the browser's own undo for that field.
+10. **Autosave**: the story is saved in the browser about 0.5 s after each change (« ✓ Enregistré »). After a refresh, the home screen offers **« Reprendre ton aventure »**.
 
 If the AI cannot fix a problem even after its retry, but the problem can be fixed in the editor (e.g. a choice pointing to a scene that does not exist), the story still opens, with a banner and the problem flagged on the map.
 

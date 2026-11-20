@@ -66,3 +66,26 @@ export type LlmScene = z.infer<typeof LlmScene>;
 export type LlmStory = z.infer<typeof LlmStory>;
 export type Scene = z.infer<typeof Scene>;
 export type Story = z.infer<typeof Story>;
+
+// ---------- Scene rewrite (step 9) ----------
+
+/**
+ * What the LLM may change when it rewrites ONE scene: the words, never the structure.
+ * Choices come back by id, without targets: the code merges them into the original scene,
+ * so a rewrite can never change where a choice leads (nor the scene id or ending kind).
+ */
+export const SceneRewrite = z.object({
+  title: z.string(),
+  emoji: z.string(),
+  mood: Mood,
+  text: z.string(),
+  choices: z.array(z.object({ id: z.string(), label: z.string(), emoji: z.string() })),
+  endingLabel: z.string().nullable(), // filled if and only if the scene is an ending
+});
+
+export const LlmSceneRewrites = z.object({
+  variants: z.array(SceneRewrite),
+});
+
+export type SceneRewrite = z.infer<typeof SceneRewrite>;
+export type LlmSceneRewrites = z.infer<typeof LlmSceneRewrites>;

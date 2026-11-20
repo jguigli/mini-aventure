@@ -5,6 +5,8 @@ import { analyzeStory } from "./analysis";
 import { fileBaseName } from "./download";
 import { COLUMN_WIDTH, computeLayout } from "./layout";
 import {
+  applySceneRewrite,
+  setLocked,
   addChoice,
   addScene,
   removeChoice,
@@ -137,5 +139,57 @@ describe("analyzeStory", () => {
     expect(analysis.compileErrors).toEqual([]); // still compiles
     expect(analysis.deadEnds.has("sommet")).toBe(true);
     expect(analysis.issuesByScene.get("sommet")?.map((i) => i.code)).toContain("missing_target");
+  });
+});
+
+describe("applySceneRewrite", () => {
+  it("takes the words from the proposal but keeps ids, targets, ending kind and lock", () => {
+    const story = setLocked(phare(), "crique", false);
+    const next = applySceneRewrite(story, "crique", {
+      title: "La flaque qui chante",
+      emoji: "🐚",
+      mood: "joie",
+      text: "Nouveau texte.",
+      // Even a proposal listing choices in another order cannot move an arrow.
+      choices: [
+        { id: "c3", label: "Remonter", emoji: "🗼" },
+        { id: "c1", label: "Rendre aux vagues", emoji: "🌊" },
+        { id: "c2", label: "Garder", emoji: "🎒" },
+      ],
+      endingLabel: null,
+    });
+    const crique = next.scenes.find((s) => s.id === "crique")!;
+    expect(crique).toMatchObject({
+      id: "crique",
+      title: "La flaque qui chante",
+      mood: "joie",
+      text: "Nouveau texte.",
+      ending: null,
+    });
+    expect(crique.choices.map((c) => [c.id, c.label, c.targetSceneId])).toEqual([
+      ["c1", "Rendre aux vagues", "fin_lumiere"],
+      ["c2", "Garder", "fin_brume"],
+      ["c3", "Remonter", "sommet"],
+    ]);
+    expect(story.scenes.find((s) => s.id === "crique")!.title).toBe("Le coquillage qui chante"); // input untouched
+  });
+
+  it("keeps the ending kind and updates its label", () => {
+    const next = applySceneRewrite(phare(), "fin_lumiere", {
+      title: "T",
+      emoji: "☀️",
+      mood: "joie",
+      text: "X",
+      choices: [],
+      endingLabel: "La sirène libre",
+    });
+    expect(next.scenes.find((s) => s.id === "fin_lumiere")!.ending).toEqual({
+      kind: "A",
+      label: "La sirène libre",
+    });
+  });
+
+  it("locks and unlocks a scene", () => {
+    expect(setLocked(phare(), "phare", true).scenes[0].locked).toBe(true);
   });
 });

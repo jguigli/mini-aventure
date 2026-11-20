@@ -9,11 +9,13 @@ import {
   addScene,
   removeChoice,
   removeScene,
+  setLocked,
   updateChoice,
   updateEndingLabel,
   updateScene,
 } from "../lib/storyEdits";
 import { storyStore } from "../state/storyStore";
+import { RewritePanel } from "./RewritePanel";
 
 const MOOD_LABELS: Record<Mood, string> = {
   calme: "Calme",
@@ -60,9 +62,20 @@ export function ScenePanel({ story, scene, issues, onSelect, onPlayFrom }: Props
           {scene.ending ? `Fin ${scene.ending.kind}` : "Scène"}
           {isStart && <span className="tag">Départ</span>}
         </h2>
-        <button type="button" className="button-link" onClick={() => onSelect(null)}>
-          Fermer
-        </button>
+        <div className="panel-heading-actions">
+          <button
+            type="button"
+            className={`button-secondary button-small lock-toggle${scene.locked ? " is-locked" : ""}`}
+            aria-pressed={scene.locked === true}
+            title="Une scène verrouillée n'est jamais modifiée par l'IA"
+            onClick={() => edit((s) => setLocked(s, scene.id, !scene.locked))}
+          >
+            {scene.locked ? "🔒 Verrouillée" : "🔓 Verrouiller"}
+          </button>
+          <button type="button" className="button-link" onClick={() => onSelect(null)}>
+            Fermer
+          </button>
+        </div>
       </div>
 
       {issues.length > 0 && (
@@ -72,6 +85,8 @@ export function ScenePanel({ story, scene, issues, onSelect, onPlayFrom }: Props
           ))}
         </ul>
       )}
+
+      <RewritePanel story={story} scene={scene} />
 
       <div className="field-row">
         <label className="field">

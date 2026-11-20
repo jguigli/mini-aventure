@@ -1,6 +1,6 @@
 // Pure editing operations on a Story. Each one returns a NEW story (never mutates its input),
 // which is what the undo history stores. The editor calls them through storyStore.edit().
-import type { Choice, Scene, Story } from "@shared/schema";
+import type { Choice, Scene, SceneRewrite, Story } from "@shared/schema";
 import { INK_RESERVED_WORDS } from "@shared/validate";
 
 /** "Le Phare d'été !" → "le_phare_d_ete": lowercase ASCII, digits and underscores. */
@@ -115,4 +115,31 @@ export function addScene(
 export function removeScene(story: Story, sceneId: string): Story {
   if (sceneId === story.startSceneId) return story;
   return { ...story, scenes: story.scenes.filter((s) => s.id !== sceneId) };
+}
+
+/** 🔒 Locked scenes are never sent to the AI for a rewrite. */
+export function setLocked(story: Story, sceneId: string, locked: boolean): Story {
+  return mapScene(story, sceneId, (scene) => ({ ...scene, locked }));
+}
+
+/**
+ * Applies an AI rewrite the author chose to keep. Only the words come from the proposal:
+ * the scene id, the ending kind, the lock and every choice's id and TARGET stay the original
+ * ones. Choices are matched by id, so a rewrite can never change where a choice leads.
+ */
+export function applySceneRewrite(story: Story, sceneId: string, rewrite: SceneRewrite): Story {
+  return mapScene(story, sceneId, (scene) => ({
+    ...scene,
+    title: rewrite.title,
+    emoji: rewrite.emoji,
+    mood: rewrite.mood,
+    text: rewrite.text,
+    choices: scene.choices.map((choice) => {
+      const proposed = rewrite.choices.find((c) => c.id === choice.id);
+      return proposed ? { ...choice, label: proposed.label, emoji: proposed.emoji } : choice;
+    }),
+    ending: scene.ending
+      ? { ...scene.ending, label: rewrite.endingLabel ?? scene.ending.label }
+      : null,
+  }));
 }

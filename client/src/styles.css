@@ -1208,3 +1208,123 @@ h1 {
 .import-editor .code-editor {
   flex: 1;
 }
+
+/* ---------- AI rewrite (step 9) ---------- */
+
+.panel-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lock-toggle.is-locked {
+  background: var(--surface-muted);
+  border-color: var(--text);
+  color: var(--text);
+}
+
+.rewrite-panel {
+  margin: 0 0 16px;
+  padding: 12px;
+  border-radius: var(--radius-small);
+  background: linear-gradient(135deg, #fff4ea, #f3ecff);
+  border: 1px solid var(--border);
+}
+
+.rewrite-panel h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.rewrite-form {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.rewrite-form .field {
+  margin-bottom: 0;
+}
+
+.rewrite-form button {
+  margin-bottom: 2px;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 0.9rem;
+}
+
+.rewrite-loading {
+  font-weight: 700;
+}
+
+.rewrite-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rewrite-card {
+  padding: 10px 12px;
+  border-radius: var(--radius-small);
+  background: var(--surface);
+  border: 2px solid var(--border);
+}
+
+.rewrite-card.is-before {
+  opacity: 0.75;
+  border-style: dashed;
+}
+
+.rewrite-card.is-after {
+  border-color: var(--accent);
+}
+
+.rewrite-label {
+  margin: 0 0 4px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.rewrite-title {
+  margin: 0;
+  font-weight: 800;
+}
+
+.rewrite-text {
+  margin: 4px 0;
+  font-size: 0.92rem;
+}
+
+.rewrite-choices {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.rewrite-ending {
+  margin: 0 0 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.rewrite-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
