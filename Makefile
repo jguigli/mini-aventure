@@ -1,4 +1,4 @@
-# Point d'entrée pour lancer le projet. Chaque cible appelle un script npm.
+# Entry point to run the project. Each target calls one npm script.
 .DEFAULT_GOAL := help
 .PHONY: help install env dev test lint format build clean
 

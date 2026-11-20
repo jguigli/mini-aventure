@@ -1,5 +1,5 @@
-// Étape 1 : écran provisoire qui vérifie la chaîne client → proxy Vite → API.
-// Il sera remplacé par l'écran de création à l'étape 5.
+// Step 1: temporary screen that checks the client → Vite proxy → API chain.
+// Replaced by the creation screen at step 5.
 import { useEffect, useState } from "react";
 import { API_HEALTH_PATH, type HealthResponse } from "@shared/api";
 
@@ -17,7 +17,7 @@ export default function App() {
       })
       .then((health) => setStatus({ kind: "ok", health }))
       .catch((err: unknown) => {
-        // Le démontage du composant annule la requête : ce n'est pas une erreur.
+        // Unmounting the component aborts the request: that is not an error.
         if (err instanceof DOMException && err.name === "AbortError") return;
         setStatus({ kind: "error" });
       });

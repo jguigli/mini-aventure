@@ -1,6 +1,6 @@
-// Chargement de la configuration depuis server/.env.
-// Le chemin est résolu par rapport à ce fichier, pour fonctionner quel que soit
-// le dossier d'où le serveur est lancé (racine du monorepo ou server/).
+// Loads configuration from server/.env.
+// The path is resolved relative to this file, so it works whichever directory
+// the server is started from (monorepo root or server/).
 import { config } from "dotenv";
 import { fileURLToPath } from "node:url";
 
@@ -12,5 +12,5 @@ export const env = {
   openaiModel: process.env.OPENAI_MODEL?.trim() || null,
 };
 
-/** Vrai si une clé OpenAI est renseignée. On ne vérifie pas sa validité ici. */
+/** True when an OpenAI key is set. Its validity is not checked here. */
 export const hasOpenAiKey = (): boolean => env.openaiApiKey !== null;

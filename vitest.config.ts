@@ -1,8 +1,8 @@
 import { defineConfig } from "vitest/config";
 import { fileURLToPath } from "node:url";
 
-// Tests unitaires du cœur (sérialiseur, explorateur, layout, validation).
-// Ce sont des fonctions pures : environnement Node, pas de navigateur simulé.
+// Unit tests for the core (serializer, explorer, layout, validation).
+// These are pure functions: Node environment, no simulated browser.
 export default defineConfig({
   resolve: {
     alias: { "@shared": fileURLToPath(new URL("./shared", import.meta.url)) },

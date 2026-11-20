@@ -1,5 +1,5 @@
-// Configuration ESLint minimale (flat config) : règles recommandées JS + TypeScript,
-// plus les règles des hooks React côté client.
+// Minimal ESLint flat config: recommended JS + TypeScript rules,
+// plus React hooks rules for the client.
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";

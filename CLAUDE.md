@@ -2,7 +2,11 @@
 
 Application web locale : une idée → un LLM (OpenAI) génère une mini-aventure → l'auteur l'édite sur une carte, la joue, l'exporte en `.ink`. Exercice d'entretien technique, **4 h au total**.
 
-**Spécification de référence : [docs/02-prompt-implementation.md](docs/02-prompt-implementation.md).** Relis la partie A et l'étape en cours avant de coder. `docs/01-recap-cadrage.md` est un récap personnel : ne pas s'en servir comme spec (en cas de divergence, la 02 fait foi).
+**Spécification de référence : [docs/02-prompt-implementation.md](docs/02-prompt-implementation.md).** Relis la partie A et l'étape en cours avant de coder.
+
+**Écarts avec la spec : [docs/03-deviations.md](docs/03-deviations.md).** La doc 02 n'est plus modifiée. Tout écart (choix technique différent, règle ajoutée, version de bibliothèque qui change une consigne) est consigné dans la doc 03, en anglais, au moment où il est fait. **En cas de conflit, la doc 03 l'emporte sur la doc 02.**
+
+`docs/01-recap-cadrage.md` est un récap personnel : ne pas s'en servir comme spec (en cas de divergence, la 02 fait foi).
 
 ## Principe non négociable
 
@@ -52,7 +56,8 @@ Application web locale : une idée → un LLM (OpenAI) génère une mini-aventur
 
 ## Conventions de code
 
-- Identifiants, noms de fichiers, **messages de commit, README et docs `docs/steps/` en anglais**. **Commentaires du code, UI, messages d'erreur, prompts et histoires en français.**
+- **En anglais** : identifiants, noms de fichiers, **commentaires du code**, messages de commit, README, `docs/steps/` et `docs/03-deviations.md`.
+- **En français** : tout ce que voit l'utilisateur final (UI, messages d'erreur de l'API, logs de démarrage du serveur), les prompts envoyés au LLM et les histoires.
 - Commenter les endroits clés (sérialiseur, explorateur, prompts, schéma, retry) : l'utilisateur doit pouvoir tout expliquer à l'oral. Pas de commentaires décoratifs.
 - Fonctions du cœur **pures et testées** : `storyToInk`, `explore`, `computeLayout`, `validateStory`.
 - Code simple et lisible plutôt qu'abstrait : pas de couches génériques « pour plus tard ».
