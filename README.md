@@ -10,14 +10,15 @@ A local web app to create short interactive adventures for readers aged 8 to 15,
 
 Work in progress, built step by step (see [`docs/steps/`](docs/steps/)). Deviations from the original spec are listed in [`docs/03-deviations.md`](docs/03-deviations.md).
 
-| Step | Content                                                                  | Status |
-| ---- | ------------------------------------------------------------------------ | ------ |
-| 1    | Project skeleton, health check, Makefile                                 | ✅     |
-| 2    | Ink core: zod schema, JSON → Ink serializer, compilation, example story  | ✅     |
-| 3    | Reachability explorer, structural validation, emoji checks               | ✅     |
-| 4    | Story generation with OpenAI (structured outputs, validation, one retry) | ✅     |
-| 5    | Creation screen, undo/redo history, browser autosave and resume          | ✅     |
-| 6–10 | Map editor, reader, import/export, AI editing, polish                    | ⏳     |
+| Step | Content                                                                       | Status |
+| ---- | ----------------------------------------------------------------------------- | ------ |
+| 1    | Project skeleton, health check, Makefile                                      | ✅     |
+| 2    | Ink core: zod schema, JSON → Ink serializer, compilation, example story       | ✅     |
+| 3    | Reachability explorer, structural validation, emoji checks                    | ✅     |
+| 4    | Story generation with OpenAI (structured outputs, validation, one retry)      | ✅     |
+| 5    | Creation screen, undo/redo history, browser autosave and resume               | ✅     |
+| 6    | Map editor: React Flow map, scene panel, live checks, quick test, .ink export | ✅     |
+| 7–10 | Reader, import/export, AI editing, polish                                     | ⏳     |
 
 ## Requirements
 
@@ -88,16 +89,21 @@ curl -X POST localhost:3001/api/generate -H 'content-type: application/json' \
 ## Using the app (so far)
 
 1. **Create**: type an idea, pick a reading level (8-10, 11-12 or 13-15), and click **« Générer l'aventure »**. Generation takes 10 to 20 s and can be cancelled. Or click **« Charger l'exemple »** to open the built-in story without calling the API.
-2. **Edit**: for now the story screen shows the scenes and lets you rename the story. The map editor arrives at step 6.
-3. **Undo / redo**: Ctrl+Z / Ctrl+Shift+Z (Cmd on macOS), or the ↶ / ↷ buttons. Typing in a field is undone in one step. Inside a text field, Ctrl+Z is the browser's own undo for that field.
-4. **Autosave**: the story is saved in the browser (`localStorage`) about 0.5 s after each change, and « ✓ Enregistré » appears in the bottom bar. After a refresh, the home screen offers **« Reprendre ton aventure »**. **« Nouvelle histoire »** deletes the save. Nothing is stored on the server.
+2. **Edit on the map**: each scene is a card (emoji, title, mood colour; ending A in green, ending B in purple), and each choice is an arrow. Click a scene to edit it in the side panel: title, emoji, mood, text, choices (label, emoji, target), plus « + Ajouter un choix », « + Nouvelle scène » and « Supprimer la scène ».
+3. **Live checks**: about 0.3 s after each change, the story is validated, serialized to Ink, compiled by inkjs and explored. Unreachable scenes turn grey and dashed, and problems get a ⚠️. **« Vérifier »** opens the full report. Problems warn, they never block.
+4. **Quick test**: under the map, click choices to walk through the story. The path lights up on the map, and « Réinitialiser » starts over.
+5. **Export**: **« ⬇ Exporter le .ink »** in the bottom bar downloads `<title>.ink`, serialized from the current story.
+6. **Undo / redo**: Ctrl+Z / Ctrl+Shift+Z (Cmd on macOS), or the ↶ / ↷ buttons. Typing in a field is undone in one step. Inside a text field, Ctrl+Z is the browser's own undo for that field.
+7. **Autosave**: the story is saved in the browser about 0.5 s after each change (« ✓ Enregistré »). After a refresh, the home screen offers **« Reprendre ton aventure »**.
+
+If the AI cannot fix a problem even after its retry, but the problem can be fixed in the editor (e.g. a choice pointing to a scene that does not exist), the story still opens, with a banner and the problem flagged on the map.
 
 ## How a story is generated
 
 1. The request is validated (idea: 1 to 500 characters, reading level).
 2. The model (`gpt-5.4-mini` by default, set `OPENAI_MODEL` to change it; reasoning effort `low`, so it checks its own story graph before answering) is called with **structured outputs**: the zod schema `LlmStory` becomes a strict JSON schema, so the API guarantees the shape of the answer. `plan` is the first field, so the model plans the two endings before writing the scenes.
 3. The code fixes what it can on its own (emojis, reading level), then runs `validateStory`.
-4. If the story is still invalid, the server retries **once**, sending the model its answer plus the exact issues (e.g. `[scène « phare », choix « c1 »] Destination manquante…`). If it is still invalid after that, it returns a clear error instead of a broken story.
+4. If the story is still invalid, the server retries **once**, sending the model its answer, the exact issues (e.g. `[scène « phare », choix « c1 »] Destination manquante…`) and the list of scenes that really exist. If issues remain after that, the story is returned **with warnings** when every issue can be fixed in the editor; otherwise the server returns a clear error.
 5. Duration and token usage are logged for each generation, to keep an eye on the budget. A typical generation uses about 2,000 tokens (under 1 cent) and takes 10 to 20 s.
 
 The system prompt is in French, adapts sentence length, vocabulary and tone to the reading level, and asks for content suitable for minors. The author's idea is fenced, so instructions hidden in it are not followed.

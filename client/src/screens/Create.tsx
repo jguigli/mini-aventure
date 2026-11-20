@@ -16,7 +16,8 @@ interface Props {
   saved: SavedStory | null;
   onResume: () => void;
   onDiscardSaved: () => void;
-  onStory: (story: Story) => void;
+  /** `warnings`: issues the AI left after its retry (0 for the example or a valid story). */
+  onStory: (story: Story, warnings?: number) => void;
   /** null while unknown, false when the server reports no OpenAI key. */
   hasApiKey: boolean | null;
 }
@@ -37,11 +38,11 @@ export function Create({ saved, onResume, onDiscardSaved, onStory, hasApiKey }: 
     abort.current = new AbortController();
     setPhase({ kind: "generating" });
     try {
-      const story = await requestStory(
+      const { story, warnings } = await requestStory(
         { idea: idea.trim(), readingLevel: level },
         abort.current.signal,
       );
-      onStory(story);
+      onStory(story, warnings.length);
     } catch (error) {
       if (abort.current?.signal.aborted) {
         setPhase({ kind: "idle" }); // cancelled by the author

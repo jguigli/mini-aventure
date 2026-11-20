@@ -16,6 +16,8 @@ export default function App() {
   const [saved, setSaved] = useState(loadSavedStory);
   const [saveStatus, setSaveStatus] = useState<SaveStatus | null>(null);
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
+  // Number of issues the AI left in the story it just generated (shown once in the editor).
+  const [generationWarnings, setGenerationWarnings] = useState(0);
 
   useUndoShortcuts(storyStore);
   useEffect(() => startAutosave(storyStore, (ok, at) => setSaveStatus({ ok, at })), []);
@@ -27,8 +29,9 @@ export default function App() {
       .catch(() => setHasApiKey(null)); // server down: the generate call will say so
   }, []);
 
-  const openStory = (story: Story) => {
+  const openStory = (story: Story, warnings = 0) => {
     setSaveStatus(null);
+    setGenerationWarnings(warnings);
     storyStore.load(story);
   };
 
@@ -37,6 +40,8 @@ export default function App() {
       <Editor
         history={{ ...history, present: history.present }}
         saveStatus={saveStatus}
+        generationWarnings={generationWarnings}
+        onDismissWarnings={() => setGenerationWarnings(0)}
         onLeave={() => {
           // Back to the home screen; the autosave is kept and offered in the resume banner.
           setSaved(loadSavedStory());

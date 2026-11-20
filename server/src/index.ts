@@ -34,16 +34,18 @@ app.post(API_GENERATE_PATH, async (req, res) => {
   const started = Date.now();
   const seconds = () => ((Date.now() - started) / 1000).toFixed(1);
   try {
-    const { story, attempts, usage } = await generateStory(
+    const { story, attempts, usage, warnings } = await generateStory(
       input.data.idea,
       input.data.readingLevel,
       callOpenAiForStory,
     );
     console.log(
       `[generate] OK en ${seconds()} s, ${attempts} essai(s), modèle ${modelName()}, ` +
-        `tokens entrée ${usage.inputTokens} / sortie ${usage.outputTokens}, « ${story.title} »`,
+        `tokens entrée ${usage.inputTokens} / sortie ${usage.outputTokens}, « ${story.title} »` +
+        (warnings.length > 0 ? `, ${warnings.length} problème(s) laissé(s) à l'auteur` : ""),
     );
-    const body: GenerateResponse = { story };
+    if (warnings.length > 0) console.warn("[generate] problèmes réparables :", warnings);
+    const body: GenerateResponse = { story, warnings };
     res.json(body);
   } catch (error) {
     const httpError = toHttpError(error);

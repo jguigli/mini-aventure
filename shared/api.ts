@@ -2,6 +2,7 @@
 // Imported on both sides through the `@shared/*` alias.
 import { z } from "zod";
 import { ReadingLevel, type Story } from "./schema";
+import type { ValidationIssue } from "./validate";
 
 export const API_HEALTH_PATH = "/api/health";
 export const API_GENERATE_PATH = "/api/generate";
@@ -36,4 +37,10 @@ export type GenerateRequest = z.infer<typeof GenerateRequest>;
 /** POST /api/generate response. */
 export interface GenerateResponse {
   story: Story;
+  /**
+   * Issues the model left after its retry, all fixable in the editor (see FIXABLE_IN_EDITOR
+   * on the server). Empty for a valid story. The editor shows them live anyway; this list
+   * lets the UI tell the author right away.
+   */
+  warnings: ValidationIssue[];
 }

@@ -266,3 +266,46 @@ Each entry gives: **Spec** (what 02 says) → **Done** (what was implemented) �
 - **Why:** in call #2 the model invented `escalier_cache`, was told so, and sent the same mistake back. The message said what was wrong, but not what the valid answers were.
 - **Supporting change:** every `ValidationIssue` now has a machine-readable `code` (`missing_target`, `unreachable`, `dead_end`…), so the program never has to parse French messages. Step 6 uses the codes too.
 - **Not measured with real calls** (the budget for this step is spent). It is unit-tested, and the next real generations will show its effect in the logs (`N essai(s)`).
+
+---
+
+## Step 6 — Map editor
+
+### Option 2: a generation can return a story with warnings
+- **Spec (step 4):** if the story is still invalid after the retry, return a clear error.
+- **Done:** after the retry, if **every** remaining issue can be fixed in the editor, the server returns `{ story, warnings }` (HTTP 200) instead of a 422. The editor shows a banner, « L'IA a laissé N problème(s)… », and flags them ⚠️ on the map. Issues the editor cannot fix still give a 422: scene ids (not editable), the start scene, the number of endings, duplicate choice ids.
+- **Why:** the author's decision after real call #2 (a choice to a scene that did not exist). Losing a whole story over one wrong arrow is worse than letting the author re-target it in two clicks. This is "the code verifies, the author decides".
+- **How:** `FIXABLE_IN_EDITOR` in `server/src/generate.ts` is an **allowlist** of issue codes, so a new code is blocking until it is deliberately added. The retry is still always tried first.
+
+### React Flow 13
+- **Spec:** `@xyflow/react`, with no version given.
+- **Done:** `@xyflow/react@13.0.2`, a newer major than the one I knew best (12). The API used (`ReactFlow`, `Handle`, `Background`, `Controls`, `MarkerType`, `Position`, `NodeProps<Node<Data, Type>>`, `onInit`, `fitView`) was checked in `dist/index.d.ts` before writing code, and matches v12.
+
+### Unreachable endings stay in the endings column
+- **Spec:** endings in the last column, unreachable scenes in a separate column.
+- **Done:** endings **always** stay in the last column (A above B), greyed and dashed when unreachable. Only unreachable **narrative** scenes go to the separate column.
+- **Why:** found in the browser test. When a redirected choice made ending A unreachable, ending A jumped to the unreachable column, outside the visible area. It was flagged in the report, but invisible on the map. Endings staying in place is also what the author expects.
+
+### The map re-frames itself when its structure changes
+- **Done:** `fitView` runs again (animated) when a scene is added or removed or changes column, but not on every keystroke.
+- **Why:** a new scene or a scene that moves to another column could appear outside the visible area.
+
+### "Impasse" only for real dead ends
+- **Done:** the map tag « ⚠️ Impasse » is shown only for a narrative scene with **no choices**. A scene whose choice lost its target shows « ⚠️ 1 » (issue count), and the report says « L'histoire s'arrête sans fin : … ».
+- **Why:** the explorer counts both as "the story stops here without an ending", but calling a scene that has choices an "impasse" was misleading.
+
+### Lecture toggle and « ▶ Jouer depuis ici » are present but disabled
+- **Spec:** both are part of step 6's header and panel.
+- **Done:** both are rendered, disabled, with a tooltip « arrive à l'étape 7 ».
+- **Why:** the Reader is step 7. The layout is final, so step 7 only has to enable them.
+
+### Quick test follows the JSON
+- **Done:** the quick test under the map walks the JSON graph (current scene highlighted, path lit, choices with a missing target disabled).
+- **Why:** it is a structural check while editing. Playing the compiled Ink is the Reader's job (step 7), which is what proves the exported Ink works.
+
+### « Vérifier » shows the report
+- **Done:** « Vérifier » runs the checks immediately (skipping the 300 ms debounce) and shows the verification report in the side panel. The report has two separate sections, « Parcours joué par inkjs » (explorer) and « Structure » (`validateStory`), with every scene name clickable. The button turns ✅ or ⚠️ with the live result.
+
+### Keyboard access to the map is deferred
+- **Spec (step 10):** a scene list navigable with the keyboard, as an alternative to the map.
+- **Done now:** the map is mouse-driven. Every scene named in the report is a keyboard-reachable button that opens the scene. The full keyboard alternative remains in step 10.

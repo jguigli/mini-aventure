@@ -1,7 +1,7 @@
 // Client side of the API. Every failure becomes an ApiClientError with a French message
 // that can be shown as is. The server already validated the story; we parse it again with
 // zod so the client never trusts an unexpected shape.
-import { API_GENERATE_PATH, type GenerateRequest } from "@shared/api";
+import { API_GENERATE_PATH, type GenerateRequest, type GenerateResponse } from "@shared/api";
 import { Story } from "@shared/schema";
 
 export class ApiClientError extends Error {
@@ -13,7 +13,10 @@ export class ApiClientError extends Error {
 
 const SERVER_DOWN = "Impossible de joindre le serveur. Vérifie que « make dev » tourne.";
 
-export async function requestStory(request: GenerateRequest, signal?: AbortSignal): Promise<Story> {
+export async function requestStory(
+  request: GenerateRequest,
+  signal?: AbortSignal,
+): Promise<{ story: Story; warnings: GenerateResponse["warnings"] }> {
   let response: Response;
   try {
     response = await fetch(API_GENERATE_PATH, {
@@ -35,7 +38,9 @@ export async function requestStory(request: GenerateRequest, signal?: AbortSigna
     throw new ApiClientError(response.status >= 500 ? SERVER_DOWN : `Erreur ${response.status}.`);
   }
 
-  const story = Story.safeParse((body as { story?: unknown } | null)?.story);
+  const data = body as Partial<GenerateResponse> | null;
+  const story = Story.safeParse(data?.story);
   if (!story.success) throw new ApiClientError("Le serveur a renvoyé une réponse inattendue.");
-  return story.data;
+  // Warnings are informative only (the editor recomputes every check live).
+  return { story: story.data, warnings: Array.isArray(data?.warnings) ? data.warnings : [] };
 }

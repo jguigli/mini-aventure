@@ -43,14 +43,35 @@ describe("generateStory", () => {
     expect(retryMessages[2].content).toContain("[scène « phare », choix « c1 »]");
   });
 
-  it("gives up after the retry with an InvalidStoryError", async () => {
+  it("gives up after the retry when an issue cannot be fixed in the editor", async () => {
     const broken = validStory();
-    broken.scenes = broken.scenes.filter((s) => !s.ending); // no endings at all
+    broken.scenes = broken.scenes.filter((s) => !s.ending); // no endings at all: blocking
     const call = fakeModel(broken, broken);
     await expect(generateStory("un phare", "11-12", call)).rejects.toBeInstanceOf(
       InvalidStoryError,
     );
     expect(call).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns the story with warnings when every remaining issue is fixable in the editor", async () => {
+    const broken = validStory();
+    broken.scenes[0].choices[0].targetSceneId = "escalier_cache"; // the real call #2 mistake
+    const call = fakeModel(broken, broken);
+
+    const result = await generateStory("un phare", "11-12", call);
+
+    expect(call).toHaveBeenCalledTimes(2); // the retry is still tried first
+    expect(result.warnings).toEqual([
+      expect.objectContaining({ code: "missing_target", sceneId: "phare", choiceId: "c1" }),
+    ]);
+    expect(result.story.scenes[0].choices[0].targetSceneId).toBe("escalier_cache");
+  });
+
+  it("does not return warnings when the retry fixes the story", async () => {
+    const broken = validStory();
+    broken.scenes[0].choices[0].targetSceneId = "escalier_cache";
+    const result = await generateStory("un phare", "11-12", fakeModel(broken, validStory()));
+    expect(result.warnings).toEqual([]);
   });
 
   it("fixes emojis silently, without a retry", async () => {

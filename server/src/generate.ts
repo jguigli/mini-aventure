@@ -2,12 +2,16 @@
 //   1. Ask the model for a story (structured output: the JSON shape is guaranteed by the API).
 //   2. Fix emojis silently, then run validateStory (the structure is checked by code).
 //   3. If there are issues, retry ONCE, sending the exact issues back to the model.
-//   4. Still invalid: give up with a clear error rather than return a broken story.
+//   4. Still invalid after the retry:
+//      - if every remaining issue can be fixed in the editor (a missing target, an ending no
+//        choice leads to…), return the story WITH its warnings: the editor flags them and the
+//        author repairs them in a few clicks ("the author decides") instead of losing the story;
+//      - otherwise (broken ids, wrong number of endings…), give up with a clear error.
 // The model call is injected (`callModel`), so this workflow is unit-tested without
 // spending anything; the real OpenAI call lives in openai.ts.
 import { normalizeStoryEmojis } from "@shared/emoji";
 import type { LlmStory, ReadingLevel, Story } from "@shared/schema";
-import { validateStory, type ValidationIssue } from "@shared/validate";
+import { validateStory, type IssueCode, type ValidationIssue } from "@shared/validate";
 import { buildGenerateInput, buildRetryInput } from "./prompts";
 
 /** One turn of the conversation sent to the model. */
@@ -40,7 +44,32 @@ export interface GenerateResult {
   story: Story;
   attempts: number;
   usage: ModelUsage;
+  /** Issues left after the retry, all fixable in the editor. Empty for a valid story. */
+  warnings: ValidationIssue[];
 }
+
+/**
+ * Issues the author can fix in the editor: re-target or delete a choice, add or delete a
+ * scene, edit a text. Everything else (scene ids, which the editor does not let you rename;
+ * the start scene; the number of endings; duplicate choice ids) blocks the story.
+ * An allowlist: a new issue code is blocking until it is deliberately added here.
+ */
+export const FIXABLE_IN_EDITOR: ReadonlySet<IssueCode> = new Set<IssueCode>([
+  "missing_target",
+  "unreachable",
+  "no_way_to_ending",
+  "dead_end",
+  "duplicate_target",
+  "self_target",
+  "choice_count",
+  "narrative_count",
+  "ending_with_choices",
+  "invalid_emoji",
+  "missing_title",
+  "missing_text",
+  "missing_label",
+  "missing_ending_label",
+]);
 
 /** Fixes what can be fixed without the model: emojis, and the requested reading level. */
 function postProcess(raw: LlmStory, readingLevel: ReadingLevel): Story {
@@ -66,7 +95,12 @@ export async function generateStory(
 
     const story = postProcess(result.story, readingLevel);
     issues = validateStory(story);
-    if (issues.length === 0) return { story, attempts: attempt, usage };
+    if (issues.length === 0) return { story, attempts: attempt, usage, warnings: [] };
+
+    const fixable = issues.every((issue) => FIXABLE_IN_EDITOR.has(issue.code));
+    if (attempt === MAX_ATTEMPTS && fixable) {
+      return { story, attempts: attempt, usage, warnings: issues };
+    }
 
     // Retry: show the model its own answer and the exact problems found by the code.
     messages.push({ role: "assistant", content: JSON.stringify(result.story) });
