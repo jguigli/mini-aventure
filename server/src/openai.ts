@@ -12,6 +12,13 @@ import { SYSTEM_PROMPT } from "./prompts";
 
 export const OPENAI_TIMEOUT_MS = 90_000;
 
+/**
+ * A little reasoning before answering. Without it, real generations made graph mistakes
+ * (an ending no choice led to, a choice to a scene that does not exist) that even the
+ * retry did not fix. "low" keeps generation fast and cheap.
+ */
+export const REASONING_EFFORT = "low" as const;
+
 let client: OpenAI | null = null;
 
 function getClient(): OpenAI {
@@ -29,8 +36,14 @@ export const callOpenAiForStory: CallModel = async (messages) => {
     model: modelName(),
     instructions: SYSTEM_PROMPT,
     input: messages,
+    reasoning: { effort: REASONING_EFFORT },
     text: { format: zodTextFormat(LlmStory, "story") },
   });
+  console.log(
+    `[openai] effort ${response.reasoning?.effort ?? "?"}, tokens de raisonnement ${
+      response.usage?.output_tokens_details?.reasoning_tokens ?? 0
+    }`,
+  );
 
   // The model can refuse (safety): the answer then holds a refusal instead of JSON.
   for (const item of response.output) {

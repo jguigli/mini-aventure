@@ -70,7 +70,7 @@ export async function generateStory(
 
     // Retry: show the model its own answer and the exact problems found by the code.
     messages.push({ role: "assistant", content: JSON.stringify(result.story) });
-    messages.push({ role: "user", content: buildRetryInput(issues) });
+    messages.push({ role: "user", content: buildRetryInput(issues, story) });
   }
   throw new InvalidStoryError(issues);
 }

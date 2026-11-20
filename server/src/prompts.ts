@@ -1,7 +1,7 @@
 // Prompts sent to the LLM. They are in French on purpose: the stories must be in French,
 // and a French prompt is the most reliable way to get French output.
 // The structure rules here mirror shared/validate.ts: the prompt asks, the code checks.
-import type { ReadingLevel } from "@shared/schema";
+import type { LlmStory, ReadingLevel } from "@shared/schema";
 import type { ValidationIssue } from "@shared/validate";
 import { INK_RESERVED_WORDS, LIMITS } from "@shared/validate";
 
@@ -42,7 +42,11 @@ LANGUE
 - Écris TOUJOURS en français, même si l'idée est donnée dans une autre langue.
 
 STRUCTURE (obligatoire, elle est vérifiée par un programme)
-- Remplis d'abord "plan" : un résumé, puis ce qui distingue vraiment la fin A de la fin B.
+- Remplis d'abord "plan", AVANT les scènes :
+  - "summary" : le résumé de l'aventure ;
+  - "endingA" et "endingB" : ce qui distingue vraiment chaque fin, PUIS l'identifiant de sa scène de fin et le choix qui y mène.
+    Exemple : « Lina libère la sirène. Scène : fin_lumiere. Atteinte depuis crique, choix "Porter le coquillage". »
+- Ensuite, en écrivant les scènes, respecte ce plan : les choix annoncés mènent bien à ces deux scènes de fin.
 - ${LIMITS.minNarrativeScenes} à ${LIMITS.maxNarrativeScenes} scènes narratives, plus exactement 2 scènes de fin.
 - Chaque scène narrative propose ${LIMITS.minChoices} à ${LIMITS.maxChoices} choix ; "ending" vaut null.
 - Chaque scène de fin a "choices": [] et "ending" rempli : une fin "A" et une fin "B", avec un court "label".
@@ -50,7 +54,7 @@ STRUCTURE (obligatoire, elle est vérifiée par un programme)
 - Chaque "targetSceneId" est l'identifiant d'une scène qui existe. Aucun choix ne ramène à sa propre scène.
 - Dans une même scène, chaque choix mène à une scène différente.
 - Toutes les scènes doivent être atteignables depuis la scène de départ, et chaque chemin doit pouvoir mener à une fin.
-- La fin A ET la fin B doivent chacune être la destination d'au moins un choix. Avant d'écrire les scènes, décide dans ton plan quels choix mènent à chaque fin.
+- La fin A ET la fin B doivent chacune être la destination d'au moins un choix (c'est l'erreur la plus fréquente : vérifie-le avant de répondre).
 - Un choix peut ramener à une scène déjà visitée, mais pas d'impasse.
 - Identifiants de scène : snake_case ASCII, minuscules, sans accent, commençant par une lettre (ex. "foret_sombre").
   Mots interdits comme identifiants : ${[...INK_RESERVED_WORDS].join(", ")}.
@@ -88,8 +92,16 @@ ${idea}
 Mets "readingLevel" à "${readingLevel}".`;
 }
 
-/** Follow-up message for the single retry: the exact issues found by validateStory. */
-export function buildRetryInput(issues: ValidationIssue[]): string {
+/**
+ * Follow-up message for the single retry: the exact issues found by validateStory, plus the
+ * list of scenes that really exist. Without that list, a model that invented a target
+ * ("escalier_cache") tended to send the same mistake back: it was told what was wrong,
+ * not what the valid choices were.
+ */
+export function buildRetryInput(
+  issues: ValidationIssue[],
+  story: Pick<LlmStory, "scenes">,
+): string {
   const lines = issues.map((issue) => {
     const where = [
       issue.sceneId && `scène « ${issue.sceneId} »`,
@@ -99,8 +111,21 @@ export function buildRetryInput(issues: ValidationIssue[]): string {
       .join(", ");
     return `- ${where ? `[${where}] ` : ""}${issue.message}`;
   });
+
+  const scenes = story.scenes.map(
+    (scene) => `- ${scene.id}${scene.ending ? ` (fin ${scene.ending.kind})` : ""} : ${scene.title}`,
+  );
+  const hasMissingTarget = issues.some((issue) => issue.code === "missing_target");
+
   return `Ton histoire ne respecte pas la structure demandée. Problèmes détectés par le programme :
 ${lines.join("\n")}
 
+Scènes qui existent dans ta réponse (ce sont les SEULES valeurs possibles pour "targetSceneId") :
+${scenes.join("\n")}
+${
+  hasMissingTarget
+    ? `\nPour chaque « Destination manquante » : remplace la cible par l'une des scènes ci-dessus, ou ajoute la scène manquante avec exactement cet identifiant.\n`
+    : ""
+}
 Renvoie l'histoire complète corrigée, en gardant le même univers et le même plan autant que possible.`;
 }

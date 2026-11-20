@@ -93,12 +93,42 @@ describe("prompts", () => {
   });
 
   it("lists issues with their location in the retry message", () => {
-    const text = buildRetryInput([
-      { sceneId: "phare", choiceId: "c2", message: "Destination manquante." },
-      { message: "L'histoire doit avoir exactement 2 fins." },
-    ]);
+    const text = buildRetryInput(
+      [
+        {
+          code: "missing_target",
+          sceneId: "phare",
+          choiceId: "c2",
+          message: "Destination manquante.",
+        },
+        { code: "ending_count", message: "L'histoire doit avoir exactement 2 fins." },
+      ],
+      validStory(),
+    );
     expect(text).toContain("- [scène « phare », choix « c2 »] Destination manquante.");
     expect(text).toContain("- L'histoire doit avoir exactement 2 fins.");
+  });
+
+  it("lists the scenes that exist, so an invented target can be fixed", () => {
+    const issues = [
+      {
+        code: "missing_target" as const,
+        sceneId: "phare",
+        choiceId: "c1",
+        message: "Destination manquante.",
+      },
+    ];
+    const text = buildRetryInput(issues, validStory());
+    expect(text).toContain("SEULES valeurs possibles");
+    expect(text).toContain("- sommet : La lueur verte");
+    expect(text).toContain("- fin_lumiere (fin A) : La voix libérée");
+    expect(text).toContain("ajoute la scène manquante avec exactement cet identifiant");
+    // The hint about missing targets only appears when there is one.
+    const other = buildRetryInput(
+      [{ code: "dead_end", sceneId: "carnet", message: "Impasse." }],
+      validStory(),
+    );
+    expect(other).not.toContain("ajoute la scène manquante");
   });
 });
 

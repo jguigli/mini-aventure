@@ -7,7 +7,33 @@
 import { isValidEmoji } from "./emoji";
 import type { Story } from "./schema";
 
+/** Machine-readable kind of issue (the message is for humans, the code is for the program). */
+export type IssueCode =
+  | "no_scenes"
+  | "invalid_scene_id"
+  | "reserved_scene_id"
+  | "duplicate_scene_id"
+  | "missing_start"
+  | "start_is_ending"
+  | "missing_title"
+  | "missing_text"
+  | "invalid_emoji"
+  | "ending_with_choices"
+  | "dead_end"
+  | "missing_ending_label"
+  | "choice_count"
+  | "duplicate_target"
+  | "duplicate_choice_id"
+  | "missing_label"
+  | "missing_target"
+  | "self_target"
+  | "ending_count"
+  | "narrative_count"
+  | "unreachable"
+  | "no_way_to_ending";
+
 export interface ValidationIssue {
+  code: IssueCode;
   sceneId?: string;
   choiceId?: string;
   message: string;
@@ -54,11 +80,11 @@ export function isValidSceneId(id: string): boolean {
 
 export function validateStory(story: Story): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  const add = (message: string, sceneId?: string, choiceId?: string) =>
-    issues.push({ sceneId, choiceId, message });
+  const add = (code: IssueCode, message: string, sceneId?: string, choiceId?: string) =>
+    issues.push({ code, sceneId, choiceId, message });
 
   if (story.scenes.length === 0) {
-    add("L'histoire ne contient aucune scène.");
+    add("no_scenes", "L'histoire ne contient aucune scène.");
     return issues;
   }
 
@@ -67,37 +93,47 @@ export function validateStory(story: Story): ValidationIssue[] {
   for (const scene of story.scenes) {
     if (!SCENE_ID_PATTERN.test(scene.id)) {
       add(
+        "invalid_scene_id",
         `Identifiant de scène invalide « ${scene.id} » : lettres minuscules sans accent, chiffres et _ uniquement, en commençant par une lettre.`,
         scene.id,
       );
     } else if (INK_RESERVED_WORDS.has(scene.id)) {
-      add(`L'identifiant « ${scene.id} » est un mot réservé d'Ink.`, scene.id);
+      add("reserved_scene_id", `L'identifiant « ${scene.id} » est un mot réservé d'Ink.`, scene.id);
     }
     if (sceneIds.has(scene.id))
-      add(`L'identifiant de scène « ${scene.id} » est utilisé deux fois.`, scene.id);
+      add(
+        "duplicate_scene_id",
+        `L'identifiant de scène « ${scene.id} » est utilisé deux fois.`,
+        scene.id,
+      );
     sceneIds.add(scene.id);
   }
 
   if (!sceneIds.has(story.startSceneId)) {
-    add(`La scène de départ « ${story.startSceneId} » n'existe pas.`);
+    add("missing_start", `La scène de départ « ${story.startSceneId} » n'existe pas.`);
   }
 
   for (const scene of story.scenes) {
-    if (!scene.title.trim()) add("La scène n'a pas de titre.", scene.id);
-    if (!scene.text.trim()) add("La scène n'a pas de texte.", scene.id);
+    if (!scene.title.trim()) add("missing_title", "La scène n'a pas de titre.", scene.id);
+    if (!scene.text.trim()) add("missing_text", "La scène n'a pas de texte.", scene.id);
     if (!isValidEmoji(scene.emoji))
-      add(`L'emoji de la scène « ${scene.emoji} » n'est pas un emoji unique.`, scene.id);
+      add(
+        "invalid_emoji",
+        `L'emoji de la scène « ${scene.emoji} » n'est pas un emoji unique.`,
+        scene.id,
+      );
 
     // Endings and choices are mutually exclusive.
     if (scene.ending && scene.choices.length > 0) {
-      add("Une fin ne doit pas proposer de choix.", scene.id);
+      add("ending_with_choices", "Une fin ne doit pas proposer de choix.", scene.id);
     }
     if (!scene.ending && scene.choices.length === 0) {
-      add("Impasse : la scène n'a ni choix ni fin.", scene.id);
+      add("dead_end", "Impasse : la scène n'a ni choix ni fin.", scene.id);
     }
-    if (scene.ending && !scene.ending.label.trim()) add("La fin n'a pas de libellé.", scene.id);
+    if (scene.ending && !scene.ending.label.trim())
+      add("missing_ending_label", "La fin n'a pas de libellé.", scene.id);
     if (scene.ending && scene.id === story.startSceneId) {
-      add("La scène de départ ne peut pas être une fin.", scene.id);
+      add("start_is_ending", "La scène de départ ne peut pas être une fin.", scene.id);
     }
 
     // Choices: count, unique ids, label, emoji, existing target.
@@ -105,6 +141,7 @@ export function validateStory(story: Story): ValidationIssue[] {
       const n = scene.choices.length;
       if (n < LIMITS.minChoices || n > LIMITS.maxChoices) {
         add(
+          "choice_count",
           `La scène propose ${n} choix au lieu de ${LIMITS.minChoices} à ${LIMITS.maxChoices}.`,
           scene.id,
         );
@@ -116,6 +153,7 @@ export function validateStory(story: Story): ValidationIssue[] {
       // Two choices to the same place are not a real choice for the reader.
       if (choice.targetSceneId && targets.has(choice.targetSceneId)) {
         add(
+          "duplicate_target",
           `Deux choix de la scène mènent tous les deux à « ${choice.targetSceneId} » : chaque choix doit mener ailleurs.`,
           scene.id,
           choice.id,
@@ -123,22 +161,39 @@ export function validateStory(story: Story): ValidationIssue[] {
       }
       targets.add(choice.targetSceneId);
       if (choiceIds.has(choice.id))
-        add(`L'identifiant de choix « ${choice.id} » est utilisé deux fois.`, scene.id, choice.id);
+        add(
+          "duplicate_choice_id",
+          `L'identifiant de choix « ${choice.id} » est utilisé deux fois.`,
+          scene.id,
+          choice.id,
+        );
       choiceIds.add(choice.id);
-      if (!choice.label.trim()) add("Le choix n'a pas de libellé.", scene.id, choice.id);
+      if (!choice.label.trim())
+        add("missing_label", "Le choix n'a pas de libellé.", scene.id, choice.id);
       if (!isValidEmoji(choice.emoji)) {
-        add(`L'emoji du choix « ${choice.emoji} » n'est pas un emoji unique.`, scene.id, choice.id);
+        add(
+          "invalid_emoji",
+          `L'emoji du choix « ${choice.emoji} » n'est pas un emoji unique.`,
+          scene.id,
+          choice.id,
+        );
       }
       if (!choice.targetSceneId) {
-        add("Destination manquante : le choix ne mène nulle part.", scene.id, choice.id);
+        add(
+          "missing_target",
+          "Destination manquante : le choix ne mène nulle part.",
+          scene.id,
+          choice.id,
+        );
       } else if (!sceneIds.has(choice.targetSceneId)) {
         add(
+          "missing_target",
           `Destination manquante : la scène « ${choice.targetSceneId} » n'existe pas.`,
           scene.id,
           choice.id,
         );
       } else if (choice.targetSceneId === scene.id) {
-        add("Le choix ramène à la même scène.", scene.id, choice.id);
+        add("self_target", "Le choix ramène à la même scène.", scene.id, choice.id);
       }
     }
   }
@@ -148,6 +203,7 @@ export function validateStory(story: Story): ValidationIssue[] {
   const kinds = endings.map((scene) => scene.ending!.kind);
   if (endings.length !== 2 || !kinds.includes("A") || !kinds.includes("B")) {
     add(
+      "ending_count",
       `L'histoire doit avoir exactement 2 fins, une A et une B (actuellement : ${
         kinds.length > 0 ? kinds.join(", ") : "aucune"
       }).`,
@@ -157,6 +213,7 @@ export function validateStory(story: Story): ValidationIssue[] {
   const narrative = story.scenes.length - endings.length;
   if (narrative < LIMITS.minNarrativeScenes || narrative > LIMITS.maxNarrativeScenes) {
     add(
+      "narrative_count",
       `L'histoire a ${narrative} scènes narratives au lieu de ${LIMITS.minNarrativeScenes} à ${LIMITS.maxNarrativeScenes}.`,
     );
   }
@@ -207,16 +264,22 @@ function checkGraph(story: Story): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   for (const scene of story.scenes) {
     if (!reachable.has(scene.id)) {
-      const what = scene.ending ? `La fin ${scene.ending.kind}` : "Cette scène";
+      // Actionable message: it is shown to the author AND sent to the LLM on retry.
+      const what = scene.ending
+        ? `La fin ${scene.ending.kind} « ${scene.id} »`
+        : `La scène « ${scene.id} »`;
       issues.push({
+        code: "unreachable",
         sceneId: scene.id,
-        message: `${what} n'est jamais atteinte : aucun chemin n'y mène depuis la scène de départ.`,
+        message: `${what} n'est jamais atteinte depuis la scène de départ : fais pointer au moins un choix d'une scène atteignable vers « ${scene.id} ».`,
       });
     } else if (!scene.ending && scene.choices.length > 0 && !canFinish.has(scene.id)) {
       // Scenes without choices are already reported as dead ends.
       issues.push({
+        code: "no_way_to_ending",
         sceneId: scene.id,
-        message: "Aucune fin n'est atteignable depuis cette scène : le lecteur tourne en rond.",
+        message:
+          "Aucune fin n'est atteignable depuis cette scène : le lecteur tourne en rond. Fais mener un de ses choix vers une fin, ou vers une scène qui y mène.",
       });
     }
   }

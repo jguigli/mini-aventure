@@ -16,7 +16,8 @@ Work in progress, built step by step (see [`docs/steps/`](docs/steps/)). Deviati
 | 2    | Ink core: zod schema, JSON → Ink serializer, compilation, example story  | ✅     |
 | 3    | Reachability explorer, structural validation, emoji checks               | ✅     |
 | 4    | Story generation with OpenAI (structured outputs, validation, one retry) | ✅     |
-| 5–10 | Creation screen, editor, reader, import/export, AI editing, polish       | ⏳     |
+| 5    | Creation screen, undo/redo history, browser autosave and resume          | ✅     |
+| 6–10 | Map editor, reader, import/export, AI editing, polish                    | ⏳     |
 
 ## Requirements
 
@@ -84,10 +85,17 @@ curl -X POST localhost:3001/api/generate -H 'content-type: application/json' \
   -d '{"idea":"Un robot jardinier découvre une graine qui parle","readingLevel":"8-10"}'
 ```
 
+## Using the app (so far)
+
+1. **Create**: type an idea, pick a reading level (8-10, 11-12 or 13-15), and click **« Générer l'aventure »**. Generation takes 10 to 20 s and can be cancelled. Or click **« Charger l'exemple »** to open the built-in story without calling the API.
+2. **Edit**: for now the story screen shows the scenes and lets you rename the story. The map editor arrives at step 6.
+3. **Undo / redo**: Ctrl+Z / Ctrl+Shift+Z (Cmd on macOS), or the ↶ / ↷ buttons. Typing in a field is undone in one step. Inside a text field, Ctrl+Z is the browser's own undo for that field.
+4. **Autosave**: the story is saved in the browser (`localStorage`) about 0.5 s after each change, and « ✓ Enregistré » appears in the bottom bar. After a refresh, the home screen offers **« Reprendre ton aventure »**. **« Nouvelle histoire »** deletes the save. Nothing is stored on the server.
+
 ## How a story is generated
 
 1. The request is validated (idea: 1 to 500 characters, reading level).
-2. The model (`gpt-5.4-mini` by default, set `OPENAI_MODEL` to change it) is called with **structured outputs**: the zod schema `LlmStory` becomes a strict JSON schema, so the API guarantees the shape of the answer. `plan` is the first field, so the model plans the two endings before writing the scenes.
+2. The model (`gpt-5.4-mini` by default, set `OPENAI_MODEL` to change it; reasoning effort `low`, so it checks its own story graph before answering) is called with **structured outputs**: the zod schema `LlmStory` becomes a strict JSON schema, so the API guarantees the shape of the answer. `plan` is the first field, so the model plans the two endings before writing the scenes.
 3. The code fixes what it can on its own (emojis, reading level), then runs `validateStory`.
 4. If the story is still invalid, the server retries **once**, sending the model its answer plus the exact issues (e.g. `[scène « phare », choix « c1 »] Destination manquante…`). If it is still invalid after that, it returns a clear error instead of a broken story.
 5. Duration and token usage are logged for each generation, to keep an eye on the budget. A typical generation uses about 2,000 tokens (under 1 cent) and takes 10 to 20 s.

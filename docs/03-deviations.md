@@ -209,3 +209,60 @@ Each entry gives: **Spec** (what 02 says) → **Done** (what was implemented) �
 ### Two real calls instead of one
 - **Spec:** a single real `curl` to validate the step.
 - **Done:** two calls (about 2 cents in total). The first one revealed the unreachable-ending gap. The second one validated the fix, including a real retry.
+
+---
+
+## Step 5 — Creation screen, undo history, autosave
+
+### A temporary story screen until step 6
+- **Spec:** after generation, "move to the next screen" (the editor, built at step 6).
+- **Done:** `screens/Editor.tsx` is a temporary screen. It has the final header (editable title, undo/redo buttons, back home) and the bottom bar (saved indicator), with a simple scene list in the middle. Step 6 replaces the list with the map and the side panel.
+- **Why:** the acceptance needs a screen where the story can be modified, undone and resumed after a refresh.
+
+### Undo merging is keyed by field
+- **Spec:** keystrokes in one field make one undo entry, created at the first change after focus or after ~1 s of inactivity.
+- **Done:** each edit can carry a `coalesceKey` (e.g. `"title"`). An edit with the same key as the previous one, less than 1 s later, replaces the present snapshot instead of pushing a new one. A pause longer than 1 s, or an edit in another field, starts a new undo step. Discrete actions pass no key and get one step each.
+- **Why:** this gives the same behaviour from a single pure function (`applyEdit`), with no focus or blur wiring in every input. It is unit-tested with an injected clock.
+- **Also:** Ctrl+Y is accepted for redo (common on Windows). Visible ↶ / ↷ buttons are added, so undo is discoverable and works with a mouse.
+
+### Save file and corrupted data
+- **Spec:** a versioned key, no undo stack saved, and try/catch around every access.
+- **Done:** the key `mini-aventure:v1` holds `{ story, savedAt }`. The story is validated with `Story.safeParse` on read. Corrupted data is ignored (not deleted) and overwritten by the next save. A pending save is flushed on `pagehide`, so a refresh within the 500 ms debounce loses nothing. A failed write shows « Sauvegarde impossible » instead of « Enregistré ».
+
+### "← Accueil" keeps the save
+- **Spec:** only the resume banner's "Nouvelle histoire" button clears the save.
+- **Done:** leaving the story with "← Accueil" goes back to the creation screen and shows the resume banner. Nothing is deleted.
+- **Why:** leaving a screen should never destroy work. Deleting stays an explicit choice.
+
+### Extras on the creation screen
+- **Done:**
+  - a « Annuler » button during generation (it aborts the request);
+  - a notice when the server reports no OpenAI key, read from `/api/health` (the example still works);
+  - a character counter (`x/500`);
+  - the textarea has `maxLength=500`, so the server limit is never hit from the UI.
+- **Why:** a generation takes 10 to 20 s, and the author should be able to give up. A missing key should be explained before the author tries to generate.
+
+### Step 4 follow-up: actionable reachability messages and a stronger plan
+- **Context:** on the first real generation from the UI, the model again left ending B with no choice leading to it, and this time **the retry did not fix it** (422 after two attempts). So far, 2 of 3 real generations had this defect on their first attempt.
+- **Done:**
+  - **Prompt**: `plan.endingA` / `plan.endingB` must now name the ending scene's id and the choice that leads to it, before the scenes are written. The rule "each ending is the target of at least one choice" is flagged as the most frequent mistake.
+  - **Message**: the `validateStory` message is now actionable, and is used both in the editor and in the retry: « La fin B « x » n'est jamais atteinte depuis la scène de départ : fais pointer au moins un choix d'une scène atteignable vers « x ». »
+- **Not done:** the code does not rewire a choice to an ending by itself. That would mean the code writes story content, against "the LLM proposes, the code verifies, the author decides".
+- **Reasoning effort `low`** (`reasoning: { effort: "low" }` in `server/src/openai.ts`): the next failure was a different graph mistake (a choice to a scene that does not exist), and the retry repeated it. Generations taking about 5 s suggested the model answered with no reasoning at all. A small reasoning budget lets it check its own graph before answering. The effective effort and the reasoning tokens are logged.
+- **Measured** (4 real calls, authorised by the author, about 4 cents in total):
+
+  | # | Idea (level) | Prompt fix | Reasoning | Result |
+  |---|---|---|---|---|
+  | 1 | Chat astronaute (8-10) | ✓ | default | ✅ first try, 5.1 s |
+  | 2 | Bibliothèque qui change (11-12) | ✓ | default | ❌ 422: choice to a non-existent scene, not fixed by the retry |
+  | 3 | Dénoncer ou protéger (13-15) | ✓ | default | ✅ first try, 9.1 s |
+  | 4 | Bibliothèque qui change (11-12) | ✓ | `low` | ✅ first try, 9.4 s, 89 reasoning tokens |
+
+  The three valid stories were checked end to end: no validation issues, no compile errors, 100% of scenes and both endings reached, no dead ends. The "ending never reached" defect did not come back after the prompt fix. This is a small sample: it shows the fixes work, not a reliability rate.
+
+### The retry lists the scenes that exist (after the measurements above)
+- **Spec:** the retry sends the issues back to the model.
+- **Done:** the retry message also lists every scene of the model's answer (id, ending kind, title) as "the ONLY possible values for `targetSceneId`". When a target is missing, it adds: "replace the target with one of these scenes, or add the missing scene with exactly this id".
+- **Why:** in call #2 the model invented `escalier_cache`, was told so, and sent the same mistake back. The message said what was wrong, but not what the valid answers were.
+- **Supporting change:** every `ValidationIssue` now has a machine-readable `code` (`missing_target`, `unreachable`, `dead_end`…), so the program never has to parse French messages. Step 6 uses the codes too.
+- **Not measured with real calls** (the budget for this step is spent). It is unit-tested, and the next real generations will show its effect in the logs (`N essai(s)`).

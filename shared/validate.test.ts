@@ -118,8 +118,10 @@ describe("validateStory: graph checks", () => {
   it("catches the real LLM answer whose ending B could not be reached", () => {
     const issues = validateStory(Story.parse(llmUnreachableEnding));
     expect(issues).toContainEqual({
+      code: "unreachable",
       sceneId: "coin_perdu",
-      message: "La fin B n'est jamais atteinte : aucun chemin n'y mène depuis la scène de départ.",
+      message:
+        "La fin B « coin_perdu » n'est jamais atteinte depuis la scène de départ : fais pointer au moins un choix d'une scène atteignable vers « coin_perdu ».",
     });
     // Same answer: "coin clair" and "coin chaud" both led to the same scene.
     expect(issues).toContainEqual(
