@@ -10,12 +10,13 @@ A local web app to create short interactive adventures for readers aged 8 to 15,
 
 Work in progress, built step by step (see [`docs/steps/`](docs/steps/)). Deviations from the original spec are listed in [`docs/03-deviations.md`](docs/03-deviations.md).
 
-| Step | Content                                                                 | Status |
-| ---- | ----------------------------------------------------------------------- | ------ |
-| 1    | Project skeleton, health check, Makefile                                | ✅     |
-| 2    | Ink core: zod schema, JSON → Ink serializer, compilation, example story | ✅     |
-| 3    | Reachability explorer, structural validation, emoji checks              | ✅     |
-| 4–10 | Generation, editor, reader, import/export, AI editing, polish           | ⏳     |
+| Step | Content                                                                  | Status |
+| ---- | ------------------------------------------------------------------------ | ------ |
+| 1    | Project skeleton, health check, Makefile                                 | ✅     |
+| 2    | Ink core: zod schema, JSON → Ink serializer, compilation, example story  | ✅     |
+| 3    | Reachability explorer, structural validation, emoji checks               | ✅     |
+| 4    | Story generation with OpenAI (structured outputs, validation, one retry) | ✅     |
+| 5–10 | Creation screen, editor, reader, import/export, AI editing, polish       | ⏳     |
 
 ## Requirements
 
@@ -71,9 +72,27 @@ The browser calls `/api/*`, which the Vite dev server proxies to Express on port
 
 ## API
 
-| Route             | Response                                                                                          |
-| ----------------- | ------------------------------------------------------------------------------------------------- |
-| `GET /api/health` | `{ "ok": true, "openaiKey": true \| false }` (reports whether a key is set, never the key itself) |
+| Route                | Body                                                               | Response                                                                                          |
+| -------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `GET /api/health`    |                                                                    | `{ "ok": true, "openaiKey": true \| false }` (reports whether a key is set, never the key itself) |
+| `POST /api/generate` | `{ "idea": string, "readingLevel": "8-10" \| "11-12" \| "13-15" }` | `{ "story": Story }`, or `{ "error": string }` with a French message                              |
+
+Try it (one real, paid call, about 1–2 cents):
+
+```bash
+curl -X POST localhost:3001/api/generate -H 'content-type: application/json' \
+  -d '{"idea":"Un robot jardinier découvre une graine qui parle","readingLevel":"8-10"}'
+```
+
+## How a story is generated
+
+1. The request is validated (idea: 1 to 500 characters, reading level).
+2. The model (`gpt-5.4-mini` by default, set `OPENAI_MODEL` to change it) is called with **structured outputs**: the zod schema `LlmStory` becomes a strict JSON schema, so the API guarantees the shape of the answer. `plan` is the first field, so the model plans the two endings before writing the scenes.
+3. The code fixes what it can on its own (emojis, reading level), then runs `validateStory`.
+4. If the story is still invalid, the server retries **once**, sending the model its answer plus the exact issues (e.g. `[scène « phare », choix « c1 »] Destination manquante…`). If it is still invalid after that, it returns a clear error instead of a broken story.
+5. Duration and token usage are logged for each generation, to keep an eye on the budget. A typical generation uses about 2,000 tokens (under 1 cent) and takes 10 to 20 s.
+
+The system prompt is in French, adapts sentence length, vocabulary and tone to the reading level, and asks for content suitable for minors. The author's idea is fenced, so instructions hidden in it are not followed.
 
 ## How a story becomes Ink
 
@@ -114,7 +133,7 @@ The full example is in [`examples/le-phare.json`](examples/le-phare.json) and [`
 
 Two independent checks. Neither one asks the LLM.
 
-1. **Structure** ([`shared/validate.ts`](shared/validate.ts), runs on the JSON): valid and unique ids, no Ink reserved words, existing targets, exactly two endings (A and B), 4 to 6 narrative scenes, 2 to 3 choices each, single emojis. The server uses it to retry the LLM once, and the editor shows the issues as warnings.
+1. **Structure** ([`shared/validate.ts`](shared/validate.ts), runs on the JSON): valid and unique ids, no Ink reserved words, existing targets, exactly two endings (A and B), 4 to 6 narrative scenes, 2 to 3 choices each leading to different scenes, single emojis. It also searches the scene graph: every scene must be reachable from the start, and an ending must be reachable from every scene. The first real LLM answer passed every other check but had an unreachable ending, which is why this search exists. The server uses it to retry the LLM once, and the editor shows the issues as warnings.
 2. **Reachability** ([`client/src/lib/explorer.ts`](client/src/lib/explorer.ts), runs on the compiled Ink): plays every path with inkjs. At each decision point it saves the state, tries each choice, and restores. A decision point already explored is skipped, which is what makes loops terminate, and a step budget is the safety net. It reports reached and unreached scenes, reached endings, dead ends and runtime errors. Because it plays the compiled Ink, it also works on imported `.ink` files.
 
 ## Design decisions so far

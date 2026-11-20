@@ -14,3 +14,8 @@ export const env = {
 
 /** True when an OpenAI key is set. Its validity is not checked here. */
 export const hasOpenAiKey = (): boolean => env.openaiApiKey !== null;
+
+/** Lightweight model with structured outputs support; override with OPENAI_MODEL. */
+export const DEFAULT_MODEL = "gpt-5.4-mini";
+
+export const modelName = (): string => env.openaiModel ?? DEFAULT_MODEL;

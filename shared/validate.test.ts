@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import examplePhare from "../examples/le-phare.json";
+// Real gpt-5.4-mini answer (step 4): passed every local check, but ending B had no way in.
+import llmUnreachableEnding from "./fixtures/llm-unreachable-ending.json";
 import { DEFAULT_EMOJI, isValidEmoji, normalizeEmoji, normalizeStoryEmojis } from "./emoji";
 import { Story, type Story as StoryT } from "./schema";
 import { isValidSceneId, validateStory } from "./validate";
@@ -109,6 +111,56 @@ describe("validateStory", () => {
     const story = phare();
     story.scenes = [];
     expect(messages(story)).toEqual(["L'histoire ne contient aucune scène."]);
+  });
+});
+
+describe("validateStory: graph checks", () => {
+  it("catches the real LLM answer whose ending B could not be reached", () => {
+    const issues = validateStory(Story.parse(llmUnreachableEnding));
+    expect(issues).toContainEqual({
+      sceneId: "coin_perdu",
+      message: "La fin B n'est jamais atteinte : aucun chemin n'y mène depuis la scène de départ.",
+    });
+    // Same answer: "coin clair" and "coin chaud" both led to the same scene.
+    expect(issues).toContainEqual(
+      expect.objectContaining({
+        sceneId: "plan_courbe",
+        choiceId: "c2",
+        message: expect.stringContaining("tous les deux"),
+      }),
+    );
+  });
+
+  it("reports an orphan scene", () => {
+    const story = phare();
+    story.scenes.find((s) => s.id === "phare")!.choices[0].targetSceneId = "crique"; // nothing leads to sommet anymore
+    story.scenes.find((s) => s.id === "phare")!.choices[1].targetSceneId = "carnet";
+    story.scenes.find((s) => s.id === "crique")!.choices[2].targetSceneId = "phare"; // was "Remonter au sommet"
+    const issues = validateStory(story);
+    expect(issues).toContainEqual(
+      expect.objectContaining({
+        sceneId: "sommet",
+        message: expect.stringContaining("jamais atteinte"),
+      }),
+    );
+  });
+
+  it("reports scenes trapped in a loop with no way to an ending", () => {
+    const story = phare();
+    // signal and carnet only lead to each other.
+    story.scenes.find((s) => s.id === "signal")!.choices = [
+      { id: "c1", label: "Lire le carnet", emoji: "📓", targetSceneId: "carnet" },
+      { id: "c2", label: "Revenir au phare", emoji: "🗼", targetSceneId: "phare" },
+    ];
+    story.scenes.find((s) => s.id === "signal")!.choices[1].targetSceneId = "carnet";
+    story.scenes.find((s) => s.id === "carnet")!.choices = [
+      { id: "c1", label: "Faire un signal", emoji: "🏮", targetSceneId: "signal" },
+      { id: "c2", label: "Relire", emoji: "🔁", targetSceneId: "signal" },
+    ];
+    const trapped = validateStory(story)
+      .filter((i) => i.message.includes("tourne en rond"))
+      .map((i) => i.sceneId);
+    expect(trapped.sort()).toEqual(["carnet", "signal"]);
   });
 });
 

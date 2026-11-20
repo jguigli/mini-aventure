@@ -1,0 +1,204 @@
+{
+  "plan": {
+    "summary": "Un petit robot jardinier explore une serre oubliée. Il découvre une graine qui parle et veut devenir fleur. Le robot doit choisir comment l'aider.",
+    "endingA": "La graine est plantée au bon endroit. Elle devient une fleur rare et chanteuse, et la serre revit.",
+    "endingB": "Le robot se trompe d'endroit, mais il apprend vite. La graine attend sagement, bien protégée, pour une autre tentative."
+  },
+  "title": "La graine qui parlait",
+  "readingLevel": "8-10",
+  "startSceneId": "serre_oubliee",
+  "scenes": [
+    {
+      "id": "serre_oubliee",
+      "title": "La serre oubliée",
+      "emoji": "🌿",
+      "mood": "mystere",
+      "text": "Bip-Lin, robot jardinier, pousse la porte rouillée. La serre dort sous la poussière, avec des pots cassés. Soudain, une petite voix murmure dans le noir.",
+      "choices": [
+        {
+          "id": "c1",
+          "label": "Chercher la voix",
+          "emoji": "🔎",
+          "targetSceneId": "table_de_bois"
+        },
+        {
+          "id": "c2",
+          "label": "Allumer les lampes",
+          "emoji": "💡",
+          "targetSceneId": "rayon_de_soleil"
+        },
+        {
+          "id": "c3",
+          "label": "Écouter très près",
+          "emoji": "👂",
+          "targetSceneId": "pot_fendu"
+        }
+      ],
+      "ending": null
+    },
+    {
+      "id": "table_de_bois",
+      "title": "La table de bois",
+      "emoji": "🪵",
+      "mood": "calme",
+      "text": "Sur une table, une graine ronde bouge toute seule. Elle dit vouloir voir la lumière. Bip-Lin remarque aussi un vieux plan de serre plié en quatre.",
+      "choices": [
+        {
+          "id": "c1",
+          "label": "Lire le plan",
+          "emoji": "🗺️",
+          "targetSceneId": "plan_courbe"
+        },
+        {
+          "id": "c2",
+          "label": "Poser des questions",
+          "emoji": "❓",
+          "targetSceneId": "grainette"
+        },
+        {
+          "id": "c3",
+          "label": "Chercher un pot propre",
+          "emoji": "🪴",
+          "targetSceneId": "pot_fendu"
+        }
+      ],
+      "ending": null
+    },
+    {
+      "id": "rayon_de_soleil",
+      "title": "Le rayon de soleil",
+      "emoji": "☀️",
+      "mood": "joie",
+      "text": "Les lampes s'allument d'un coup. La serre brille, et la graine rit comme un petit pois. Mais les ombres bougent aussi près des étagères.",
+      "choices": [
+        {
+          "id": "c1",
+          "label": "Suivre la lumière",
+          "emoji": "🪟",
+          "targetSceneId": "plan_courbe"
+        },
+        {
+          "id": "c2",
+          "label": "Revenir vers la graine",
+          "emoji": "🫘",
+          "targetSceneId": "grainette"
+        },
+        {
+          "id": "c3",
+          "label": "Fermer une fenêtre",
+          "emoji": "🪟",
+          "targetSceneId": "pot_fendu"
+        }
+      ],
+      "ending": null
+    },
+    {
+      "id": "pot_fendu",
+      "title": "Le pot fendu",
+      "emoji": "🫙",
+      "mood": "tension",
+      "text": "Bip-Lin trouve un pot fendu, mais encore solide. La graine y saute presque d'impatience. Elle dit que ses racines adorent les cachettes bien propres.",
+      "choices": [
+        {
+          "id": "c1",
+          "label": "Nettoyer le pot",
+          "emoji": "🧹",
+          "targetSceneId": "grainette"
+        },
+        {
+          "id": "c2",
+          "label": "Chercher plus de terre",
+          "emoji": "🪣",
+          "targetSceneId": "plan_courbe"
+        },
+        {
+          "id": "c3",
+          "label": "Le laisser de côté",
+          "emoji": "📦",
+          "targetSceneId": "serre_oubliee"
+        }
+      ],
+      "ending": null
+    },
+    {
+      "id": "plan_courbe",
+      "title": "Le plan courbe",
+      "emoji": "🗺️",
+      "mood": "mystere",
+      "text": "Le plan montre trois coins de serre. Un seul reçoit le matin doux. La graine chuchote : « Je veux un endroit parfait. »",
+      "choices": [
+        {
+          "id": "c1",
+          "label": "Choisir le coin clair",
+          "emoji": "🌤️",
+          "targetSceneId": "jardin_lumineux"
+        },
+        {
+          "id": "c2",
+          "label": "Choisir le coin chaud",
+          "emoji": "🔥",
+          "targetSceneId": "jardin_lumineux"
+        },
+        {
+          "id": "c3",
+          "label": "Demander son avis",
+          "emoji": "🗣️",
+          "targetSceneId": "grainette"
+        }
+      ],
+      "ending": null
+    },
+    {
+      "id": "grainette",
+      "title": "Grainette parle",
+      "emoji": "🫘",
+      "mood": "joie",
+      "text": "La graine se présente comme Grainette. Elle adore l'eau tiède et les histoires courtes. Bip-Lin promet de l'aider à grandir sans la bousculer.",
+      "choices": [
+        {
+          "id": "c1",
+          "label": "Planter avec soin",
+          "emoji": "🌱",
+          "targetSceneId": "jardin_lumineux"
+        },
+        {
+          "id": "c2",
+          "label": "Chercher encore mieux",
+          "emoji": "🧭",
+          "targetSceneId": "plan_courbe"
+        },
+        {
+          "id": "c3",
+          "label": "Attendre un peu",
+          "emoji": "⏳",
+          "targetSceneId": "serre_oubliee"
+        }
+      ],
+      "ending": null
+    },
+    {
+      "id": "jardin_lumineux",
+      "title": "Le jardin lumineux",
+      "emoji": "🌸",
+      "mood": "joie",
+      "text": "Bip-Lin plante Grainette dans le meilleur coin. Le sol est doux, l'eau est juste assez tiède. Très vite, une fleur brillante s'ouvre et chante une petite chanson.",
+      "choices": [],
+      "ending": {
+        "kind": "A",
+        "label": "La serre refleurit"
+      }
+    },
+    {
+      "id": "coin_perdu",
+      "title": "Le coin perdu",
+      "emoji": "🏚️",
+      "mood": "sombre",
+      "text": "Bip-Lin choisit un coin trop sombre, puis un autre trop sec. Grainette ne se fâche pas. Elle bâille seulement et attend mieux, bien au chaud dans son pot.",
+      "choices": [],
+      "ending": {
+        "kind": "B",
+        "label": "Un essai à recommencer"
+      }
+    }
+  ]
+}

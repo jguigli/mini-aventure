@@ -147,3 +147,65 @@ Each entry gives: **Spec** (what 02 says) → **Done** (what was implemented) �
 ### Emoji helpers written now
 - **Spec:** step 4 (server-side normalization).
 - **Done:** `shared/emoji.ts` (`isValidEmoji`, `normalizeEmoji`, `normalizeStoryEmojis`) is written and tested now, because `validateStory` needs `isValidEmoji`. It works on graphemes (`Intl.Segmenter`), so `🏖️` and `👩‍🚀` count as one emoji.
+
+---
+
+## Step 4 — Generation with OpenAI
+
+### `openai@6.49`, Responses API, `zodTextFormat`
+- **Spec:** "official `openai` SDK; check the exact JSON-schema response format syntax".
+- **Done:** `openai@6.49.0` with `client.responses.parse({ model, instructions, input, text: { format: zodTextFormat(LlmStory, "story") } })`, which returns `response.output_parsed`.
+- **Why:** `openai@7` requires Node ≥ 22 and the project targets Node 20.19+, so npm resolved the latest 6.x. Its `zod` peer range (`^3.25 || ^4.0`) accepts zod 4. The generated schema was printed and checked before any paid call: `strict: true`, `additionalProperties: false` everywhere, `plan` first, `ending` as `anyOf [object, null]`.
+
+### Default model `gpt-5.4-mini`, `OPENAI_MODEL` optional
+- **Spec:** the model is set by `OPENAI_MODEL`, a light model that supports structured outputs.
+- **Done:** `OPENAI_MODEL` stays optional. When it is empty, the server uses `gpt-5.4-mini` (`DEFAULT_MODEL` in `server/src/env.ts`).
+- **Why:** the key has access to many models (listed with `models.list()`, a free call). OpenAI's model page confirms structured outputs for `gpt-5.4-mini`, at $0.75 / $4.50 per million input / output tokens. Newer families (`gpt-6-*`) had inconsistent pricing across OpenAI's own pages, so they were not picked blind.
+
+### Retry logic in its own file, with an injected model call
+- **Spec:** `server/src/openai.ts` (client and calls), with the retry described in step 4.
+- **Done:**
+  - `generate.ts`: the workflow (normalize, validate, retry once). The model call is a parameter (`CallModel`).
+  - `openai.ts`: the only file that talks to OpenAI.
+  - `errors.ts`: maps errors to an HTTP status and a French message.
+- **Why:** the retry path is unit-tested with a fake model, at no cost. `openai.ts` stays small and is the only place to change to switch provider.
+
+### `validateStory` also checks the story graph
+- **Spec:** reachability is checked by the explorer (Ink, client side). `validateStory` does local structural checks only.
+- **Done:** `validateStory` now runs two searches on the JSON graph:
+  - forward from the start: every scene must be reachable;
+  - backward from the endings: every reachable scene must be able to reach an ending (no loop without an exit).
+
+  It also reports two choices of the same scene that lead to the same place. The system prompt now says this explicitly too: each ending must be the target of a choice, and each choice of a scene leads somewhere different.
+- **Why:** **the first real call proved it was needed.** The answer passed every local check and compiled, but no choice led to ending B (and two choices led to the same scene). The explorer saw it, but the server could not, so it would have returned the story without retrying. The server has no Ink compiler, and our stories have no conditions, so a graph search on the JSON gives the same answer as the explorer. That answer is kept as a regression fixture (`shared/fixtures/llm-unreachable-ending.json`). On the second real call, the first attempt was rejected and the retry produced a valid story. The explorer remains the reference check on the client, and the only one for imported `.ink` files.
+
+### Timeout 90 s, no SDK retries
+- **Spec:** timeout of about 60 s.
+- **Done:** 90 s per call, and `maxRetries: 0` on the SDK client.
+- **Why:** `gpt-5.4-mini` is a reasoning model. One call took 11 s, and a generation with a retry took 21 s in total, so 60 s per call leaves little margin on a slow day. `maxRetries: 0` means the SDK never silently repeats a paid call. The only retry is ours, for invalid stories. API errors are not retried.
+
+### Post-processing before validation
+- **Done:** emojis are normalized and `readingLevel` is forced to the requested value before `validateStory`. Neither triggers a retry.
+- **Why:** both are cosmetic or certain fixes, not worth a second paid call.
+
+### Error statuses
+- **Done:**
+  - invalid input → 400;
+  - malformed JSON → 400;
+  - body too large → 413;
+  - key missing → 503;
+  - refused key → **502** (not 401, so the browser client does not read it as its own authentication problem);
+  - rate limit or quota → 429;
+  - timeout → 504;
+  - model refusal or story still invalid → 422;
+  - other OpenAI errors → 502.
+
+  Every message is in French, and the technical details go only to the server log.
+
+### Prompt-injection fencing
+- **Done:** the author's idea is placed between `<idee>` tags and described as "an idea, not an instruction".
+- **Why:** the idea is free user input sent to the model.
+
+### Two real calls instead of one
+- **Spec:** a single real `curl` to validate the step.
+- **Done:** two calls (about 2 cents in total). The first one revealed the unreachable-ending gap. The second one validated the fix, including a real retry.
