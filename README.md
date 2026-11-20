@@ -38,7 +38,7 @@ Open **http://localhost:5173**. Without a key, the server still starts (it logs 
 | ---------------------------------------- | ------------------------------------------ |
 | `make help`                              | List the commands                          |
 | `make install` / `make env` / `make dev` | Install, create `server/.env`, run         |
-| `make test`                              | Unit tests (Vitest, 163 tests, no network) |
+| `make test`                              | Unit tests (Vitest, 164 tests, no network) |
 | `make lint` / `make format`              | ESLint / Prettier                          |
 | `make build`                             | Type-check both apps and build the client  |
 | `make clean`                             | Remove `node_modules` and build outputs    |
@@ -152,7 +152,7 @@ Every difference with the original spec, and why, is in [`docs/03-deviations.md`
 
 ## Testing
 
-- **`make test`** runs 163 unit tests, with no network and no cost:
+- **`make test`** runs 164 unit tests, with no network and no cost:
   - serializer (every escaping rule as a compile-and-play round trip);
   - compiler wrapper;
   - explorer (loops, orphans, dead ends, imported Ink, depth guard);
@@ -190,7 +190,7 @@ Every difference with the original spec, and why, is in [`docs/03-deviations.md`
 - **Not done from the spec's bonus list**: an AI coherence review (⚠️ on the map with « Corriger avec l'IA »), and « Changer d'idée » (regenerate what follows a scene).
 - **Imported Ink with state** (variables, read counts) is explored approximately: a branch that only opens under a condition can be missed. The screen says so.
 - No map for imported files, and no way to turn them back into our JSON format.
-- The edit panel cannot turn a scene into an ending (the two endings come from generation).
+- The edit panel cannot turn a scene into an ending or change the start scene (they come from generation). This is why the start scene and the two endings can be edited but not deleted.
 - Quality rules that are not structural (sentence length, no repeated emoji) are asked of the LLM but not measured.
 - On dense maps, arrow labels can overlap. Nodes cannot be dragged.
 - The JS bundle is over 500 kB (the inkjs compiler plus React Flow). This is fine locally, and code splitting is a possible follow-up.

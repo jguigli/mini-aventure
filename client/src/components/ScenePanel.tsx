@@ -10,6 +10,7 @@ import {
   addScene,
   removeChoice,
   removeScene,
+  sceneRemovalBlocker,
   setLocked,
   updateChoice,
   updateEndingLabel,
@@ -39,6 +40,7 @@ export function ScenePanel({ story, scene, issues, onSelect, onPlayFrom }: Props
   const edit = storyStore.edit;
   const key = (field: string) => `scene:${scene.id}:${field}`;
   const isStart = scene.id === story.startSceneId;
+  const removalBlocker = sceneRemovalBlocker(story, scene.id);
   // Opening a scene (map, scene list, report link) moves the focus to its panel heading,
   // so keyboard and screen-reader users land where the editing happens.
   const heading = useRef<HTMLHeadingElement>(null);
@@ -280,8 +282,8 @@ export function ScenePanel({ story, scene, issues, onSelect, onPlayFrom }: Props
           type="button"
           className="button-danger"
           onClick={onDelete}
-          disabled={isStart}
-          title={isStart ? "La scène de départ ne peut pas être supprimée" : undefined}
+          disabled={removalBlocker !== null}
+          title={removalBlocker ?? undefined}
         >
           Supprimer la scène
         </button>

@@ -108,12 +108,26 @@ export function addScene(
 }
 
 /**
- * Removes a scene. The start scene cannot be removed. Choices that led to the removed scene
- * are KEPT, now flagged « destination manquante »: the author decides where they go
- * (and Ctrl+Z brings the scene back).
+ * Why a scene cannot be removed, or null if it can. The start scene and the two endings are
+ * protected: the editor cannot pick another start scene nor create an ending, so removing
+ * them would leave a problem only Ctrl+Z could fix. They can still be edited.
+ */
+export function sceneRemovalBlocker(story: Story, sceneId: string): string | null {
+  if (sceneId === story.startSceneId) return "La scène de départ ne peut pas être supprimée.";
+  const scene = story.scenes.find((s) => s.id === sceneId);
+  if (scene?.ending) {
+    return `La fin ${scene.ending.kind} ne peut pas être supprimée : l'histoire doit garder ses deux fins.`;
+  }
+  return null;
+}
+
+/**
+ * Removes a scene, unless it is protected (see sceneRemovalBlocker). Choices that led to the
+ * removed scene are KEPT, now flagged « destination manquante »: the author decides where
+ * they go (and Ctrl+Z brings the scene back).
  */
 export function removeScene(story: Story, sceneId: string): Story {
-  if (sceneId === story.startSceneId) return story;
+  if (sceneRemovalBlocker(story, sceneId)) return story;
   return { ...story, scenes: story.scenes.filter((s) => s.id !== sceneId) };
 }
 

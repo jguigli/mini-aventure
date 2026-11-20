@@ -11,6 +11,7 @@ import {
   addScene,
   removeChoice,
   removeScene,
+  sceneRemovalBlocker,
   slugify,
   uniqueSceneId,
   updateChoice,
@@ -107,6 +108,15 @@ describe("storyEdits", () => {
     expect(story.scenes.map((s) => s.id)).not.toContain("signal");
     expect(story.scenes.find((s) => s.id === "sommet")!.choices[0].targetSceneId).toBe("signal");
     expect(removeScene(phare(), "phare").scenes).toHaveLength(7); // the start scene stays
+  });
+
+  it("protects the start scene and both endings from removal", () => {
+    expect(sceneRemovalBlocker(phare(), "phare")).toMatch(/départ/);
+    expect(sceneRemovalBlocker(phare(), "fin_lumiere")).toMatch(/fin A/);
+    expect(sceneRemovalBlocker(phare(), "fin_brume")).toMatch(/fin B/);
+    expect(sceneRemovalBlocker(phare(), "carnet")).toBeNull();
+    expect(removeScene(phare(), "fin_lumiere").scenes).toHaveLength(7);
+    expect(removeScene(phare(), "fin_brume").scenes).toHaveLength(7);
   });
 
   it("builds the export file name from the title", () => {
