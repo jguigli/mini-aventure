@@ -821,3 +821,201 @@ h1 {
   background: var(--warn-soft);
   color: var(--warn);
 }
+
+/* ---------- Reader ---------- */
+
+.reader {
+  flex: 1;
+  display: grid;
+  place-items: start center;
+  padding: 32px 16px 48px;
+  overflow-y: auto;
+  background: var(--bg);
+  transition: background 0.4s;
+}
+
+/* A soft wash of the scene's mood (or the ending colour) behind the card. */
+.reader-mood-calme {
+  background: linear-gradient(180deg, var(--mood-calme), var(--bg) 70%);
+}
+.reader-mood-mystere {
+  background: linear-gradient(180deg, var(--mood-mystere), var(--bg) 70%);
+}
+.reader-mood-tension {
+  background: linear-gradient(180deg, var(--mood-tension), var(--bg) 70%);
+}
+.reader-mood-joie {
+  background: linear-gradient(180deg, var(--mood-joie), var(--bg) 70%);
+}
+.reader-mood-sombre {
+  background: linear-gradient(180deg, var(--mood-sombre), var(--bg) 70%);
+}
+.reader-mood-ending-a {
+  background: linear-gradient(180deg, #d8f0dd, var(--bg) 70%);
+}
+.reader-mood-ending-b {
+  background: linear-gradient(180deg, #e9ddf7, var(--bg) 70%);
+}
+
+.reader-card {
+  width: min(680px, 100%);
+  padding: 32px 36px;
+  background: var(--surface);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.reader-story-title {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.reader-emoji {
+  font-size: 84px;
+  line-height: 1.1;
+  margin: 8px 0;
+}
+
+.reader-scene-title {
+  margin: 0 0 16px;
+  font-size: 1.7rem;
+}
+
+.reader-text {
+  text-align: left;
+  font-size: 1.2rem;
+  line-height: 1.7;
+}
+
+.reader-text p {
+  margin: 0 0 12px;
+}
+
+.reader-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.reader-choice {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 18px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-align: left;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text);
+  transition:
+    border-color 0.15s,
+    transform 0.15s,
+    background 0.15s;
+}
+
+.reader-choice:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+}
+
+.reader-choice:focus-visible {
+  outline: 4px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.reader-choice-emoji {
+  font-size: 1.6rem;
+}
+
+.reader-choice-text {
+  flex: 1;
+}
+
+.reader-choice-key {
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 7px;
+}
+
+.reader-end {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.reader-ending {
+  margin: 0;
+  padding: 14px;
+  border-radius: 14px;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.reader-ending.ending-a {
+  background: #d8f0dd;
+  color: #1f5c39;
+}
+
+.reader-ending.ending-b {
+  background: #e9ddf7;
+  color: #4d3778;
+}
+
+.reader-ending.is-broken {
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 1rem;
+}
+
+.reader-endings-count {
+  margin: 0;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.reader-edit {
+  margin-top: 24px;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader,
+  .reader-choice {
+    transition: none;
+  }
+}
+
+/* The bottom bar stays in Lecture, but out of the way. */
+.action-bar.is-quiet {
+  background: transparent;
+  border-top-color: transparent;
+}
+
+.action-bar.is-quiet .button-primary {
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 0.9rem;
+  padding: 6px 14px;
+}
+
+/* Arrows are display-only: their emoji labels must never catch a click meant for a scene.
+   React Flow re-enables clicks on `.react-flow__edge-textwrapper`, hence the extra specificity. */
+.story-map .react-flow__edge,
+.story-map .react-flow__edge-textwrapper {
+  pointer-events: none;
+}

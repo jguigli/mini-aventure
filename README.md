@@ -18,7 +18,8 @@ Work in progress, built step by step (see [`docs/steps/`](docs/steps/)). Deviati
 | 4    | Story generation with OpenAI (structured outputs, validation, one retry)      | ✅     |
 | 5    | Creation screen, undo/redo history, browser autosave and resume               | ✅     |
 | 6    | Map editor: React Flow map, scene panel, live checks, quick test, .ink export | ✅     |
-| 7–10 | Reader, import/export, AI editing, polish                                     | ⏳     |
+| 7    | Reader: plays the compiled Ink, both endings, play from a scene, keyboard     | ✅     |
+| 8–10 | Import/export, AI editing, polish                                             | ⏳     |
 
 ## Requirements
 
@@ -92,9 +93,10 @@ curl -X POST localhost:3001/api/generate -H 'content-type: application/json' \
 2. **Edit on the map**: each scene is a card (emoji, title, mood colour; ending A in green, ending B in purple), and each choice is an arrow. Click a scene to edit it in the side panel: title, emoji, mood, text, choices (label, emoji, target), plus « + Ajouter un choix », « + Nouvelle scène » and « Supprimer la scène ».
 3. **Live checks**: about 0.3 s after each change, the story is validated, serialized to Ink, compiled by inkjs and explored. Unreachable scenes turn grey and dashed, and problems get a ⚠️. **« Vérifier »** opens the full report. Problems warn, they never block.
 4. **Quick test**: under the map, click choices to walk through the story. The path lights up on the map, and « Réinitialiser » starts over.
-5. **Export**: **« ⬇ Exporter le .ink »** in the bottom bar downloads `<title>.ink`, serialized from the current story.
-6. **Undo / redo**: Ctrl+Z / Ctrl+Shift+Z (Cmd on macOS), or the ↶ / ↷ buttons. Typing in a field is undone in one step. Inside a text field, Ctrl+Z is the browser's own undo for that field.
-7. **Autosave**: the story is saved in the browser about 0.5 s after each change (« ✓ Enregistré »). After a refresh, the home screen offers **« Reprendre ton aventure »**.
+5. **Read**: switch to **📖 Lecture** in the header, or click **« ▶ Jouer depuis ici »** on a scene. The Reader plays the **compiled Ink** (not the JSON), with a big emoji, the scene title and text, and the choices as big buttons (Tab / Enter, or keys 1-9). At an ending it shows the ending's label, « Rejouer » and « Fins découvertes : x/2 ». **« ✏️ Modifier cette scène »** goes back to Édition with that scene selected.
+6. **Export**: **« ⬇ Exporter le .ink »** in the bottom bar (in Édition and in Lecture) downloads `<title>.ink`, serialized from the current story.
+7. **Undo / redo**: Ctrl+Z / Ctrl+Shift+Z (Cmd on macOS), or the ↶ / ↷ buttons. Typing in a field is undone in one step. Inside a text field, Ctrl+Z is the browser's own undo for that field.
+8. **Autosave**: the story is saved in the browser about 0.5 s after each change (« ✓ Enregistré »). After a refresh, the home screen offers **« Reprendre ton aventure »**.
 
 If the AI cannot fix a problem even after its retry, but the problem can be fixed in the editor (e.g. a choice pointing to a scene that does not exist), the story still opens, with a banner and the problem flagged on the map.
 
@@ -120,6 +122,7 @@ The LLM never writes Ink. It returns JSON that matches a zod schema (`shared/sch
 
 === phare ===
 # scene: phare
+# scene_title: La voix dans la nuit
 # emoji: 🗼
 # mood: mystere
 Chaque soir, Lina allume la lanterne du vieux phare. …
@@ -128,6 +131,7 @@ Chaque soir, Lina allume la lanterne du vieux phare. …
 
 === fin_lumiere ===
 # scene: fin_lumiere
+# scene_title: La voix libérée
 # emoji: ☀️
 # mood: joie
 # ending: A
@@ -136,7 +140,7 @@ Lina pose le coquillage sur la vague. …
 -> END
 ```
 
-- Each scene is an Ink knot. Tags carry metadata: `scene` (for the reachability explorer), `emoji` and `mood` (for display), and `ending` and `ending_label` (for endings).
+- Each scene is an Ink knot. Tags carry metadata: `scene` (for the reachability explorer), `scene_title`, `emoji` and `mood` (for display), and `ending` and `ending_label` (for endings). Because of this, the Reader plays the Ink alone, without the JSON.
 - Choices are persistent (`+`), so they are still there when the reader comes back to a scene.
 - All text is escaped, so a story can never break Ink syntax. Every escaping rule is tested by a compile-and-play round trip.
 - The Ink always compiles, even mid-edit: a choice with a missing target ends the story and gets a warning instead of a compile error.

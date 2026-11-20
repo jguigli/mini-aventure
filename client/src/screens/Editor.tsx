@@ -1,6 +1,8 @@
-// Edit mode: header, map + quick test, side panel (scene editor or verification report),
-// bottom action bar. The JSON in storyStore is the source of truth; the map, the checks and
-// the exported .ink are all derived from it.
+// Story screen with two modes sharing one header and one bottom bar:
+//   - Édition: map + quick test, side panel (scene editor or verification report);
+//   - Lecture: the Reader, which plays the compiled Ink.
+// The JSON in storyStore is the source of truth; the map, the checks, the Reader and the
+// exported .ink are all derived from it. Switching modes keeps the current scene.
 import { useState } from "react";
 import type { Story } from "@shared/schema";
 import { QuickTest } from "../components/QuickTest";
@@ -11,6 +13,7 @@ import { VerificationPanel } from "../components/VerificationPanel";
 import { exportInk } from "../lib/download";
 import { storyStore, type StoryHistory } from "../state/storyStore";
 import { useStoryAnalysis } from "../state/useStoryAnalysis";
+import { Reader } from "./Reader";
 
 interface Props {
   history: StoryHistory & { present: Story };
@@ -19,6 +22,9 @@ interface Props {
   /** Issues the AI left after its retry (shown once, as a banner). */
   generationWarnings: number;
   onDismissWarnings: () => void;
+  /** Endings found in Lecture during this session. */
+  discoveredEndings: Set<string>;
+  onEndingDiscovered: (kind: string) => void;
 }
 
 export function Editor({
@@ -27,10 +33,26 @@ export function Editor({
   onLeave,
   generationWarnings,
   onDismissWarnings,
+  discoveredEndings,
+  onEndingDiscovered,
 }: Props) {
   const story = history.present;
   const { analysis, pending, checkNow } = useStoryAnalysis(story);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [mode, setMode] = useState<"edit" | "read">("edit");
+  // Lecture: where to start, and the scene currently read (to come back to it in Édition).
+  const [readFrom, setReadFrom] = useState<string | null>(null);
+  const [readingScene, setReadingScene] = useState<string | null>(null);
+
+  const openReader = (sceneId: string | null) => {
+    setReadFrom(sceneId);
+    setReadingScene(sceneId);
+    setMode("read");
+  };
+  const openEditor = (sceneId: string | null) => {
+    setSelectedId(sceneId);
+    setMode("edit");
+  };
   // Quick test: path of scene ids from the start, and the edges taken ("scene:choice").
   const [testPath, setTestPath] = useState<string[]>([story.startSceneId]);
   const [testEdges, setTestEdges] = useState<Set<string>>(new Set());
@@ -62,14 +84,19 @@ export function Editor({
           />
         </label>
         <div className="mode-toggle" role="group" aria-label="Mode">
-          <button type="button" aria-pressed="true" className="is-active">
+          <button
+            type="button"
+            aria-pressed={mode === "edit"}
+            className={mode === "edit" ? "is-active" : undefined}
+            onClick={() => mode === "read" && openEditor(readingScene)}
+          >
             ✏️ Édition
           </button>
           <button
             type="button"
-            aria-pressed="false"
-            disabled
-            title="Le mode Lecture arrive à l'étape 7"
+            aria-pressed={mode === "read"}
+            className={mode === "read" ? "is-active" : undefined}
+            onClick={() => mode === "edit" && openReader(selectedId)}
           >
             📖 Lecture
           </button>
@@ -79,7 +106,7 @@ export function Editor({
           className={`button-secondary check-button ${analysis.ok ? "is-ok" : "is-warn"}`}
           onClick={() => {
             checkNow();
-            setSelectedId(null);
+            openEditor(null);
           }}
         >
           {analysis.ok ? "✅ Vérifier" : "⚠️ Vérifier"}
@@ -122,47 +149,60 @@ export function Editor({
         </div>
       )}
 
-      <main className="editor-main">
-        <div className="editor-map-column">
-          <StoryMap
-            story={story}
-            analysis={analysis}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            testPath={path}
-            testEdges={testEdges}
-          />
-          <QuickTest
-            story={story}
-            path={path}
-            onReset={resetTest}
-            onChoose={(sceneId, choiceId, targetId) => {
-              setTestPath([...path, targetId]);
-              setTestEdges(new Set(testEdges).add(`${sceneId}:${choiceId}`));
-            }}
-          />
-        </div>
-        <aside className="side-panel">
-          {selected ? (
-            <ScenePanel
-              key={selected.id}
-              story={story}
-              scene={selected}
-              issues={analysis.issuesByScene.get(selected.id) ?? []}
-              onSelect={setSelectedId}
-            />
-          ) : (
-            <VerificationPanel
+      {mode === "read" ? (
+        <Reader
+          story={story}
+          startFrom={readFrom}
+          onScene={setReadingScene}
+          onEditScene={openEditor}
+          discoveredEndings={discoveredEndings}
+          onEndingDiscovered={onEndingDiscovered}
+          totalEndings={analysis.endingsTotal}
+        />
+      ) : (
+        <main className="editor-main">
+          <div className="editor-map-column">
+            <StoryMap
               story={story}
               analysis={analysis}
-              pending={pending}
+              selectedId={selectedId}
               onSelect={setSelectedId}
+              testPath={path}
+              testEdges={testEdges}
             />
-          )}
-        </aside>
-      </main>
+            <QuickTest
+              story={story}
+              path={path}
+              onReset={resetTest}
+              onChoose={(sceneId, choiceId, targetId) => {
+                setTestPath([...path, targetId]);
+                setTestEdges(new Set(testEdges).add(`${sceneId}:${choiceId}`));
+              }}
+            />
+          </div>
+          <aside className="side-panel">
+            {selected ? (
+              <ScenePanel
+                key={selected.id}
+                story={story}
+                scene={selected}
+                issues={analysis.issuesByScene.get(selected.id) ?? []}
+                onSelect={setSelectedId}
+                onPlayFrom={openReader}
+              />
+            ) : (
+              <VerificationPanel
+                story={story}
+                analysis={analysis}
+                pending={pending}
+                onSelect={setSelectedId}
+              />
+            )}
+          </aside>
+        </main>
+      )}
 
-      <footer className="action-bar">
+      <footer className={`action-bar${mode === "read" ? " is-quiet" : ""}`}>
         <button type="button" className="button-primary" onClick={() => exportInk(story)}>
           ⬇ Exporter le .ink
         </button>

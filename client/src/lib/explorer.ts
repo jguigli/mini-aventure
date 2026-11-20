@@ -8,6 +8,7 @@
 //   3. Loops: a decision point already explored is skipped (see `decisionKey`).
 //   4. Safety net: stop after `maxSteps` choices and report `truncated`.
 import type { InkStory } from "./inkCompile";
+import { tagValue } from "./inkTags";
 
 export interface ExploreOptions {
   /** Maximum number of choices taken in total before giving up. */
@@ -64,16 +65,6 @@ export function knotNamesFromSource(source: string): string[] {
  */
 function decisionKey(story: InkStory): string {
   return story.currentChoices.map((choice) => `${choice.sourcePath}:${choice.text}`).join("|");
-}
-
-/** Value of a "key: value" tag, if present among `tags`. The last one wins. */
-function tagValue(tags: string[], key: string): string | null {
-  let value: string | null = null;
-  for (const tag of tags) {
-    const match = tag.match(/^\s*([\w-]+)\s*:\s*(.*?)\s*$/);
-    if (match && match[1] === key) value = match[2];
-  }
-  return value;
 }
 
 /**

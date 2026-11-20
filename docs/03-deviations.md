@@ -309,3 +309,35 @@ Each entry gives: **Spec** (what 02 says) → **Done** (what was implemented) �
 ### Keyboard access to the map is deferred
 - **Spec (step 10):** a scene list navigable with the keyboard, as an alternative to the map.
 - **Done now:** the map is mouse-driven. Every scene named in the report is a keyboard-reachable button that opens the scene. The full keyboard alternative remains in step 10.
+
+---
+
+## Step 7 — Reader
+
+### New Ink tag `# scene_title:`
+- **Spec:** the Reader shows « grand emoji de la scène, titre, texte », and uses the real inkjs story, not the JSON.
+- **Done:** the serializer now writes `# scene_title: <title>` in every knot, right after `# scene:`. `examples/le-phare.ink` was regenerated through its Vitest file snapshot.
+- **Why:** the scene title only existed in the JSON. Reading it from there would break the rule that the Reader plays the Ink only. With the tag, everything the Reader shows comes from the compiled story (text from `Continue()`, metadata from tags), so an exported `.ink` re-imported elsewhere keeps its scene titles.
+
+### Number keys pick a choice
+- **Spec:** full keyboard navigation and visible focus.
+- **Done:** Tab / Enter on the choice buttons as required, plus keys **1-9** to pick a choice directly (shown as small key hints). After each step, focus moves to the first choice, or to « Rejouer » at the end.
+- **Why:** focus management makes the keyboard flow continuous. Number keys are a cheap extra that suits a game.
+
+### Switching modes keeps the scene in both directions
+- **Spec:** going back and forth with Édition keeps the scene.
+- **Done:** Lecture starts at the scene selected in Édition (or at the start if none). Going back to Édition, with the toggle or « ✏️ Modifier cette scène », selects the scene being read. « ▶ Jouer depuis ici » (now enabled) uses `ChoosePathString(sceneId)`.
+
+### Discovered endings
+- **Spec:** « Fins découvertes : x/2 », kept for the session.
+- **Done:** kept in memory by the app (not in `localStorage`) and reset when another story is opened. The ending on screen is counted immediately (a browser test showed « 0/2 » for one render otherwise). The total comes from the story's endings (`analysis.endingsTotal`).
+
+### The story can change while reading
+- **Done:** if the story changes during Lecture (Ctrl+Z still works there), the Reader recompiles and resumes at the same scene.
+
+### A dead end or a runtime error is shown, not thrown
+- **Done:** a choice with no target ends with « L'histoire s'arrête ici sans fin : un choix ne mène nulle part. ». An inkjs runtime error is displayed in the card, and a story that does not compile shows its errors with « Retour à l'édition ».
+
+### Map fix found while testing the Reader
+- **Done:** arrows and their emoji labels on the map no longer catch clicks (`pointer-events: none` on `.react-flow__edge` and `.react-flow__edge-textwrapper`, which React Flow re-enables by default).
+- **Why:** the browser test could not click « Le carnet du gardien », because an arrow label was lying over it. Arrows are display-only in this app.

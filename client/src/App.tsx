@@ -1,6 +1,6 @@
 // App root: one store holds the current story; the screen follows from it
 // (no story → creation screen, a story → editor).
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { API_HEALTH_PATH, type HealthResponse } from "@shared/api";
 import type { Story } from "@shared/schema";
 import type { SaveStatus } from "./components/SavedIndicator";
@@ -18,6 +18,13 @@ export default function App() {
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
   // Number of issues the AI left in the story it just generated (shown once in the editor).
   const [generationWarnings, setGenerationWarnings] = useState(0);
+  // Endings found in Lecture, kept in memory for the session (reset when another story opens).
+  const [discoveredEndings, setDiscoveredEndings] = useState<Set<string>>(new Set());
+  const onEndingDiscovered = useCallback(
+    (kind: string) =>
+      setDiscoveredEndings((found) => (found.has(kind) ? found : new Set(found).add(kind))),
+    [],
+  );
 
   useUndoShortcuts(storyStore);
   useEffect(() => startAutosave(storyStore, (ok, at) => setSaveStatus({ ok, at })), []);
@@ -32,6 +39,7 @@ export default function App() {
   const openStory = (story: Story, warnings = 0) => {
     setSaveStatus(null);
     setGenerationWarnings(warnings);
+    setDiscoveredEndings(new Set());
     storyStore.load(story);
   };
 
@@ -42,6 +50,8 @@ export default function App() {
         saveStatus={saveStatus}
         generationWarnings={generationWarnings}
         onDismissWarnings={() => setGenerationWarnings(0)}
+        discoveredEndings={discoveredEndings}
+        onEndingDiscovered={onEndingDiscovered}
         onLeave={() => {
           // Back to the home screen; the autosave is kept and offered in the resume banner.
           setSaved(loadSavedStory());

@@ -5,6 +5,7 @@
 
 === phare ===
 # scene: phare
+# scene_title: La voix dans la nuit
 # emoji: 🗼
 # mood: mystere
 Chaque soir, Lina allume la lanterne du vieux phare. Ce soir, une voix douce monte de la mer. Elle répète son prénom, encore et encore. Le vent sent le sel et le secret.
@@ -13,6 +14,7 @@ Chaque soir, Lina allume la lanterne du vieux phare. Ce soir, une voix douce mon
 
 === sommet ===
 # scene: sommet
+# scene_title: La lueur verte
 # emoji: 🔭
 # mood: tension
 Au sommet, Lina pointe sa longue-vue vers les vagues. Une lueur verte danse sous l'eau, près des rochers. La voix devient plus forte, presque suppliante.
@@ -22,6 +24,7 @@ Au sommet, Lina pointe sa longue-vue vers les vagues. Une lueur verte danse sous
 
 === crique ===
 # scene: crique
+# scene_title: Le coquillage qui chante
 # emoji: 🐚
 # mood: mystere
 Les galets crissent sous les bottes de Lina. Dans une flaque, un coquillage nacré vibre comme un cœur. La voix sort de là, claire et fragile.
@@ -31,6 +34,7 @@ Les galets crissent sous les bottes de Lina. Dans une flaque, un coquillage nacr
 
 === carnet ===
 # scene: carnet
+# scene_title: Le carnet du gardien
 # emoji: 📓
 # mood: calme
 Lina feuillette le carnet de son grand-père, l'ancien gardien. Un dessin montre une sirène enfermée dans un coquillage. Une note dit : « Celle qui chante doit retrouver la marée haute. »
@@ -39,6 +43,7 @@ Lina feuillette le carnet de son grand-père, l'ancien gardien. Un dessin montre
 
 === signal ===
 # scene: signal
+# scene_title: Trois éclats de lumière
 # emoji: 🏮
 # mood: tension
 Lina fait clignoter la lanterne trois fois. Sous l'eau, la lueur verte répond, puis glisse vers le rivage. Mais la marée commence déjà à descendre.
@@ -47,6 +52,7 @@ Lina fait clignoter la lanterne trois fois. Sous l'eau, la lueur verte répond, 
 
 === fin_lumiere ===
 # scene: fin_lumiere
+# scene_title: La voix libérée
 # emoji: ☀️
 # mood: joie
 # ending: A
@@ -56,6 +62,7 @@ Lina pose le coquillage sur la vague. Une sirène minuscule en jaillit en riant.
 
 === fin_brume ===
 # scene: fin_brume
+# scene_title: La voix perdue
 # emoji: 🌫️
 # mood: sombre
 # ending: B

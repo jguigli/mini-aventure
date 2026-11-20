@@ -60,6 +60,7 @@ function sceneBlock(scene: Scene, sceneIds: Set<string>): string {
   const lines = [
     `=== ${scene.id} ===`,
     `# scene: ${scene.id}`, // used by the explorer to know which scene it is in
+    `# scene_title: ${escapeInline(scene.title)}`, // shown by the reader, which plays the Ink
     `# emoji: ${escapeInline(scene.emoji)}`,
     `# mood: ${scene.mood}`,
   ];

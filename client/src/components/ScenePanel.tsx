@@ -28,9 +28,11 @@ interface Props {
   scene: Scene;
   issues: ValidationIssue[];
   onSelect: (sceneId: string | null) => void;
+  /** « ▶ Jouer depuis ici »: opens Lecture at this scene. */
+  onPlayFrom: (sceneId: string) => void;
 }
 
-export function ScenePanel({ story, scene, issues, onSelect }: Props) {
+export function ScenePanel({ story, scene, issues, onSelect, onPlayFrom }: Props) {
   const edit = storyStore.edit;
   const key = (field: string) => `scene:${scene.id}:${field}`;
   const isStart = scene.id === story.startSceneId;
@@ -236,12 +238,7 @@ export function ScenePanel({ story, scene, issues, onSelect }: Props) {
         >
           + Nouvelle scène
         </button>
-        <button
-          type="button"
-          className="button-secondary"
-          disabled
-          title="Le mode Lecture arrive à l'étape 7"
-        >
+        <button type="button" className="button-secondary" onClick={() => onPlayFrom(scene.id)}>
           ▶ Jouer depuis ici
         </button>
         <button
