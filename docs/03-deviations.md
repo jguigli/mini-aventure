@@ -405,3 +405,25 @@ Each entry gives: **Spec** (what 02 says) → **Done** (what was implemented) �
 
 ### One structured-call helper
 - **Done:** `server/src/openai.ts` now has one `callStructured(schema, name, instructions, messages)`, used by both generation and rewrite (same reasoning effort, refusal and truncation handling, and logs).
+
+---
+
+## Step 10 — Polish and documentation
+
+### Accessibility measured, not eyeballed
+- **Spec:** an accessibility pass (contrast, focus, `aria` labels, keyboard navigation on the map; at minimum, a scene list navigable as an alternative to the map).
+- **Done:**
+  - **Contrast**: WCAG ratios were computed for every theme colour pair. Four were under 4.5:1 (orange accent text, white on orange, accent on its pale background, green on pale green). `--accent` went from `#c8541f` to `#ad4718`, `--accent-hover` to `#8f3a12`, and `--good` to `#2a7048`. The look is the same, and the contrast is now AA everywhere.
+  - **axe-core audit** of every screen (home, editor with the report, editor with a scene, code dialog, Reader, import), with the WCAG 2.1 A/AA and best-practice rules. 4 violations were fixed (no `h1` in the editor and Reader, and the low contrast of « ✏️ Modifier cette scène », caused by an opacity). The audit now finds **0 violations**.
+  - **Keyboard alternative to the map**: a « Scènes » list in the side panel (every scene as a button, with its status spelled out: départ, fin A/B, verrouillée, inaccessible, impasse, n problème(s)). Opening a scene moves the focus to its panel heading.
+  - **Map nodes out of the Tab order** (`nodesFocusable={false}`): React Flow nodes could get the focus, but Enter did not open them, so they were useless tab stops. The map's label points to the scene list.
+  - **Reduced motion** is also respected on the map (no animated arrows in the quick test, no node transitions).
+- **Why:** measured results can be defended, and a keyboard-only scenario confirms the flow: home → « Charger l'exemple » → scene list → edit a title → Lecture → keys 1-9 → « Rejouer ».
+
+### README written for a third party, with screenshots
+- **Spec:** install and run, a 2-minute demo, an architecture diagram, trade-offs, what was done with AI and what was reviewed by hand, limits and next steps, example sources.
+- **Done:** all of these, plus three screenshots (`docs/images/`), the API table, a testing section and the real-call budget. The architecture diagram is a Mermaid flowchart (rendered by GitHub).
+- **"What was done with AI"** states facts only: the spec came from the author, the code was written by Claude Code under the author's direction, the decisions the author took, how each step was verified, and what those checks caught. The author should complete it with what they personally reviewed.
+
+### Third-party run, simulated
+- **Done:** the project's files (tracked and new, without `node_modules`, `.env` or build output) were copied to an empty folder, and the README was followed exactly: `make install`, `make env`, `make test` (160 passed), `make build`, `make dev`, all **with no key**. The home screen explains the missing key, and the whole demo path (map, checks, undo, Reader, both endings, exports, import, inkle example, axe audit, keyboard scenario) runs with no errors. Generation and rewrite need a key; they were validated with real calls in steps 4, 5 and 9.

@@ -148,13 +148,20 @@ export function StoryMap({ story, analysis, selectedId, onSelect, testPath, test
   }, [story, testEdges]);
 
   return (
-    <div className="story-map" aria-label="Carte de l'histoire">
+    <div
+      className="story-map"
+      role="region"
+      aria-label="Carte de l'histoire (au clavier : utilise la liste des scènes du panneau)"
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
         nodesDraggable={false}
         nodesConnectable={false}
+        // Nodes are not keyboard-operable in React Flow (Enter does not open them): keep them
+        // out of the Tab order; the scene list in the side panel is the keyboard alternative.
+        nodesFocusable={false}
         edgesFocusable={false}
         onNodeClick={(_, node) => onSelect(node.id)}
         onPaneClick={() => onSelect(null)}

@@ -1,35 +1,18 @@
 # Mini-aventure
 
-A local web app to create short interactive adventures for readers aged 8 to 15, in the [Ink](https://www.inklestudios.com/ink/) format. An author types an idea, an LLM (OpenAI) drafts the story, and the author edits it on a visual map, plays it, checks that every scene and ending is reachable, and exports it as `.ink`.
+A local web app to create short interactive adventures for readers aged 8 to 15, in the [Ink](https://www.inklestudios.com/ink/) format. An author types an idea, an LLM (OpenAI) drafts the story, and the author edits it on a visual map, plays it, checks that every scene and both endings are reachable, and exports it as `.ink`.
 
-> The app's interface and generated stories are in French. The code, its comments and its documentation are in English.
+> The interface and the generated stories are in French. The code, its comments and this documentation are in English.
 
 **Guiding principle: the LLM proposes, the code verifies, the author decides.**
 
-## Status
+| Create                                     | Edit on the map                       | Read                              |
+| ------------------------------------------ | ------------------------------------- | --------------------------------- |
+| ![Creation screen](docs/images/create.png) | ![Map editor](docs/images/editor.png) | ![Reader](docs/images/reader.png) |
 
-Work in progress, built step by step (see [`docs/steps/`](docs/steps/)). Deviations from the original spec are listed in [`docs/03-deviations.md`](docs/03-deviations.md).
+## Quick start
 
-| Step | Content                                                                                       | Status |
-| ---- | --------------------------------------------------------------------------------------------- | ------ |
-| 1    | Project skeleton, health check, Makefile                                                      | ✅     |
-| 2    | Ink core: zod schema, JSON → Ink serializer, compilation, example story                       | ✅     |
-| 3    | Reachability explorer, structural validation, emoji checks                                    | ✅     |
-| 4    | Story generation with OpenAI (structured outputs, validation, one retry)                      | ✅     |
-| 5    | Creation screen, undo/redo history, browser autosave and resume                               | ✅     |
-| 6    | Map editor: React Flow map, scene panel, live checks, quick test, .ink export                 | ✅     |
-| 7    | Reader: plays the compiled Ink, both endings, play from a scene, keyboard                     | ✅     |
-| 8    | Import (.ink in text mode) and export (.ink, compiled .json, view code), public inkle example | ✅     |
-| 9    | AI editing: rewrite a scene (preview, keep or cancel, undo), 3 variants, lock 🔒              | ✅     |
-| 10   | Accessibility pass, final README                                                              | ⏳     |
-
-## Requirements
-
-- Node.js **20.19+** (or 22.12+), npm 10+
-- `make` (preinstalled on macOS and Linux)
-- An OpenAI API key
-
-## Getting started
+Requirements: **Node.js 20.19+** (or 22.12+) with npm 10+, `make` (preinstalled on macOS and Linux), and an OpenAI API key (only needed to generate or rewrite with the AI; everything else works without one).
 
 ```bash
 make install   # install all dependencies (npm workspaces)
@@ -40,132 +23,172 @@ Open `server/.env` and paste your key:
 
 ```dotenv
 OPENAI_API_KEY=sk-...
-OPENAI_MODEL=
+OPENAI_MODEL=          # optional, defaults to gpt-5.4-mini
 ```
 
-`server/.env` is ignored by git. The key is only read by the server and is never sent to the browser.
+`server/.env` is ignored by git. The key is read by the server only and is never sent to the browser.
 
 ```bash
-make dev       # start the API (port 3001) and the client (http://localhost:5173)
+make dev       # API on port 3001 + app on http://localhost:5173
 ```
 
-Open http://localhost:5173. The page shows **« API OK, clé OpenAI configurée »** when everything is wired up, or a warning if the key is missing. Without a key the server still starts and logs `Clé manquante : renseigne server/.env`.
+Open **http://localhost:5173**. Without a key, the server still starts (it logs `Clé manquante : renseigne server/.env`) and the home screen says so. You can still load the examples, edit, play, import and export.
 
-## Commands
+| Command                                  | What it does                               |
+| ---------------------------------------- | ------------------------------------------ |
+| `make help`                              | List the commands                          |
+| `make install` / `make env` / `make dev` | Install, create `server/.env`, run         |
+| `make test`                              | Unit tests (Vitest, 160 tests, no network) |
+| `make lint` / `make format`              | ESLint / Prettier                          |
+| `make build`                             | Type-check both apps and build the client  |
+| `make clean`                             | Remove `node_modules` and build outputs    |
 
-| Command                     | What it does                              |
-| --------------------------- | ----------------------------------------- |
-| `make help`                 | List the commands                         |
-| `make install`              | Install dependencies                      |
-| `make env`                  | Create `server/.env` if it does not exist |
-| `make dev`                  | Start the server and client together      |
-| `make test`                 | Run unit tests (Vitest)                   |
-| `make lint` / `make format` | ESLint / Prettier                         |
-| `make build`                | Type-check both apps and build the client |
-| `make clean`                | Remove `node_modules` and build outputs   |
+## 2-minute demo
 
-## Project layout
+1. **Create**: on the home screen, click **« Charger l'exemple »**. It opens the built-in story « Le phare qui murmure » with no API call. With a key, you can instead type an idea, pick a reading level and click **« ✨ Générer l'aventure »** (10 to 20 s).
+2. **Map**: each scene is a card (mood colour; ending A in green, ending B in purple) and each choice is an arrow. **« ✅ Vérifier »** shows the report: 7/7 scenes and 2/2 endings reached.
+3. **Break it on purpose**: click « Le coquillage qui chante », and in « Mène à » send « Porter le coquillage jusqu'aux vagues » to « La voix perdue (fin B) ». Within 0.3 s, ending A turns grey and dashed (« Inaccessible »), the button turns « ⚠️ Vérifier », and the report says « Fins atteintes : 1/2 ». Press **Ctrl+Z** (Cmd+Z), and everything is back.
+4. **Rework with the AI** (needs a key): in the same panel, click **« Plus de suspense »** (tick « Proposer 3 variantes » if you like). Compare the before/after preview, click **« Garder »**, then Ctrl+Z to undo. The arrows never move: the AI only rewrites the words.
+5. **Read**: switch to **📖 Lecture**. The Reader plays the compiled Ink, not the JSON. Reach both endings with the mouse or the keys 1-9, and watch « Fins découvertes : 2/2 ».
+6. **Export / import**: **« ⬇ Exporter le .ink »** (or « Autres formats » → compiled `.json`, or « Voir le code Ink »). Back on the home screen, **« Importer un .ink »** that file, or open **« Exemple Ink d'inkle »**: text mode, with the code on the left, the player on the right, and the explorer's results.
 
+## Features
+
+- **Generation** with OpenAI structured outputs. The story is JSON that must match a zod schema, with a plan written first. It has 4 to 6 scenes plus 2 endings, and is adapted to three reading levels (8-10, 11-12, 13-15) with content suitable for minors.
+- **Map editor** (React Flow): edit titles, emojis, moods, texts and choices; add or delete choices and scenes; lock a scene 🔒. A **quick test** under the map lets you click through the story and lights up the path.
+- **Live checks**, about 0.3 s after each change: structure (`validateStory`), Ink compilation (inkjs), and a **reachability explorer** that plays every path. Problems warn, they never block.
+- **✨ Rewrite a scene with the AI**: quick actions or a free instruction, 1 or 3 proposals, a before/after preview, then keep (undoable) or cancel.
+- **Reader**: plays the compiled Ink, with a big emoji, the text, choice buttons, both endings, « Rejouer » and « Fins découvertes : x/2 ». It can start from any scene (« ▶ Jouer depuis ici »), and switching between Édition and Lecture keeps the scene.
+- **Export**: `.ink`, compiled `.json` (for ink runtimes), and a code viewer with Copy. **Import**: any `.ink` in text mode (edit, play, explore).
+- **Undo/redo** (Ctrl+Z / Ctrl+Shift+Z, typing grouped into one step) and **autosave** in the browser, with « Reprendre ton aventure » after a refresh.
+- **Accessibility**: real buttons, full keyboard use (a scene list as the keyboard alternative to the map, number keys in the Reader, visible focus), `aria-live` on the story text, emojis hidden from screen readers, WCAG AA contrast, reduced motion respected. axe-core reports no violations on any screen.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  A[Idea + reading level] --> S[Express server<br/>holds the OpenAI key]
+  S -->|structured outputs<br/>zod schema| L[OpenAI]
+  L -->|JSON| S
+  S -->|validateStory + one retry| J[(Story JSON<br/>source of truth)]
+  J -->|deterministic serializer| I[.ink text]
+  I -->|inkjs Compiler| C[Compiled story]
+  C --> E[Explorer:<br/>plays every path]
+  C --> R[Reader]
+  I --> X[Export .ink / .json]
+  E --> M[Map & report:<br/>⚠️ unreachable, dead ends]
 ```
-client/   Vite + React + TypeScript (UI, Ink compilation and playback in the browser)
-server/   Express + TypeScript (holds the OpenAI key, /api/* routes)
-shared/   Code used by both sides, imported as @shared/* (API contract, schemas, validation)
-docs/     Design notes and one doc per implementation step
-```
 
-The browser calls `/api/*`, which the Vite dev server proxies to Express on port 3001. There is no CORS setup, and the client never knows the key.
+- **The LLM never writes Ink.** It returns JSON that must match a strict schema (`shared/schema.ts`). The API guarantees the shape, and our code checks the content.
+- **The JSON is the single source of truth.** The map, the checks, the Reader and the exports are all derived from it. A **deterministic serializer** (`client/src/lib/inkSerializer.ts`) turns it into Ink, escaping every author or LLM text so it can never be read as Ink syntax. The Ink always compiles, even mid-edit: a missing target becomes `-> END` and a warning.
+- **Two independent checks, neither of them asked to the LLM**:
+  - **structure**, on the JSON (`shared/validate.ts`): ids, Ink reserved words, targets, exactly two endings, counts, emojis, plus a graph search (every scene reachable, an ending reachable from every scene). The server uses it to retry the LLM, and the editor shows it live;
+  - **reachability**, on the compiled Ink (`client/src/lib/explorer.ts`): a depth-first search that saves and restores the inkjs state at each choice, skips decision points already explored (that is what ends loops), and has a step and depth budget. Because it plays the compiled Ink, it also works on imported `.ink` files.
+- **The Reader plays the Ink**, not the JSON. Scene metadata travels as Ink tags (`# scene:`, `# scene_title:`, `# emoji:`, `# mood:`, `# ending:`, `# ending_label:`), so if a story plays in the Reader, the exported `.ink` works.
 
-## API
-
-| Route                | Body                                                                               | Response                                                                                                                                              |
-| -------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/health`    |                                                                                    | `{ "ok": true, "openaiKey": true \| false }` (reports whether a key is set, never the key itself)                                                     |
-| `POST /api/generate` | `{ "idea": string, "readingLevel": "8-10" \| "11-12" \| "13-15" }`                 | `{ "story": Story }`, or `{ "error": string }` with a French message                                                                                  |
-| `POST /api/rewrite`  | `{ "story": Story, "sceneId": string, "instruction": string, "variants": 1 \| 3 }` | `{ "variants": SceneRewrite[] }`: proposals with the words only (title, emoji, mood, text, choice labels and emojis, ending label), never the targets |
-
-Try it (one real, paid call, about 1–2 cents):
-
-```bash
-curl -X POST localhost:3001/api/generate -H 'content-type: application/json' \
-  -d '{"idea":"Un robot jardinier découvre une graine qui parle","readingLevel":"8-10"}'
-```
-
-## Using the app (so far)
-
-1. **Create**: type an idea, pick a reading level (8-10, 11-12 or 13-15), and click **« Générer l'aventure »**. Generation takes 10 to 20 s and can be cancelled. Or click **« Charger l'exemple »** to open the built-in story without calling the API.
-2. **Edit on the map**: each scene is a card (emoji, title, mood colour; ending A in green, ending B in purple), and each choice is an arrow. Click a scene to edit it in the side panel: title, emoji, mood, text, choices (label, emoji, target), plus « + Ajouter un choix », « + Nouvelle scène » and « Supprimer la scène ».
-3. **Live checks**: about 0.3 s after each change, the story is validated, serialized to Ink, compiled by inkjs and explored. Unreachable scenes turn grey and dashed, and problems get a ⚠️. **« Vérifier »** opens the full report. Problems warn, they never block.
-4. **✨ Retravailler avec l'IA** (in the scene panel): quick actions (« Améliorer le style », « Plus court », « Plus de suspense », « Adapter au niveau de lecture ») or a free instruction, with **1 or 3 proposals**. A **before/after preview** lets you **keep** a proposal or cancel. Keeping it is one undo step (Ctrl+Z restores the previous version). The AI only rewrites the words: **where each choice leads never changes**. **🔓 Verrouiller** a scene and the AI will not touch it.
-5. **Quick test**: under the map, click choices to walk through the story. The path lights up on the map, and « Réinitialiser » starts over.
-6. **Read**: switch to **📖 Lecture** in the header, or click **« ▶ Jouer depuis ici »** on a scene. The Reader plays the **compiled Ink** (not the JSON), with a big emoji, the scene title and text, and the choices as big buttons (Tab / Enter, or keys 1-9). At an ending it shows the ending's label, « Rejouer » and « Fins découvertes : x/2 ». **« ✏️ Modifier cette scène »** goes back to Édition with that scene selected.
-7. **Export**: **« ⬇ Exporter le .ink »** in the bottom bar (in Édition and in Lecture) downloads `<title>.ink`, serialized from the current story. **« Autres formats »** offers the **compiled `.json`**, which ink runtimes such as inkjs or the Unity plugin load, and **« Voir le code Ink »**, a dialog with a Copy button.
-8. **Import**: on the home screen, **« Importer un .ink »** opens any `.ink` file in **text mode**: a code editor and the player side by side, with the explorer's results (knots reached, endings, dead ends), updated as you type. Imported files are not shown on the map (an assumed choice: rebuilding our structure from arbitrary Ink is out of scope) and are not autosaved. **« Exemple Ink d'inkle »** opens the public example.
-9. **Undo / redo**: Ctrl+Z / Ctrl+Shift+Z (Cmd on macOS), or the ↶ / ↷ buttons. Typing in a field is undone in one step. Inside a text field, Ctrl+Z is the browser's own undo for that field.
-10. **Autosave**: the story is saved in the browser about 0.5 s after each change (« ✓ Enregistré »). After a refresh, the home screen offers **« Reprendre ton aventure »**.
-
-If the AI cannot fix a problem even after its retry, but the problem can be fixed in the editor (e.g. a choice pointing to a scene that does not exist), the story still opens, with a banner and the problem flagged on the map.
-
-## How a story is generated
-
-1. The request is validated (idea: 1 to 500 characters, reading level).
-2. The model (`gpt-5.4-mini` by default, set `OPENAI_MODEL` to change it; reasoning effort `low`, so it checks its own story graph before answering) is called with **structured outputs**: the zod schema `LlmStory` becomes a strict JSON schema, so the API guarantees the shape of the answer. `plan` is the first field, so the model plans the two endings before writing the scenes.
-3. The code fixes what it can on its own (emojis, reading level), then runs `validateStory`.
-4. If the story is still invalid, the server retries **once**, sending the model its answer, the exact issues (e.g. `[scène « phare », choix « c1 »] Destination manquante…`) and the list of scenes that really exist. If issues remain after that, the story is returned **with warnings** when every issue can be fixed in the editor; otherwise the server returns a clear error.
-5. Duration and token usage are logged for each generation, to keep an eye on the budget. A typical generation uses about 2,000 tokens (under 1 cent) and takes 10 to 20 s.
-
-The system prompt is in French, adapts sentence length, vocabulary and tone to the reading level, and asks for content suitable for minors. The author's idea is fenced, so instructions hidden in it are not followed.
-
-## How a story becomes Ink
-
-The LLM never writes Ink. It returns JSON that matches a zod schema (`shared/schema.ts`). The JSON is the source of truth, and a deterministic serializer (`client/src/lib/inkSerializer.ts`) turns it into Ink, which the official inkjs compiler compiles in the browser.
+Excerpt of the generated Ink ([full example](examples/le-phare.ink)):
 
 ```ink
-# title: Le phare qui murmure
-# reading_level: 11-12
-
--> phare
-
-=== phare ===
-# scene: phare
-# scene_title: La voix dans la nuit
-# emoji: 🗼
+=== crique ===
+# scene: crique
+# scene_title: Le coquillage qui chante
+# emoji: 🐚
 # mood: mystere
-Chaque soir, Lina allume la lanterne du vieux phare. …
-+ [Monter au sommet #emoji: 🪜] -> sommet
-+ [Descendre à la crique #emoji: 🏖️] -> crique
-
-=== fin_lumiere ===
-# scene: fin_lumiere
-# scene_title: La voix libérée
-# emoji: ☀️
-# mood: joie
-# ending: A
-# ending_label: La voix libérée
-Lina pose le coquillage sur la vague. …
--> END
+Les galets crissent sous les bottes de Lina. …
++ [Porter le coquillage jusqu'aux vagues #emoji: 🌊] -> fin_lumiere
++ [Le garder dans sa poche #emoji: 🎒] -> fin_brume
++ [Remonter au sommet #emoji: 🗼] -> sommet
 ```
 
-- Each scene is an Ink knot. Tags carry metadata: `scene` (for the reachability explorer), `scene_title`, `emoji` and `mood` (for display), and `ending` and `ending_label` (for endings). Because of this, the Reader plays the Ink alone, without the JSON.
-- Choices are persistent (`+`), so they are still there when the reader comes back to a scene.
-- All text is escaped, so a story can never break Ink syntax. Every escaping rule is tested by a compile-and-play round trip.
-- The Ink always compiles, even mid-edit: a choice with a missing target ends the story and gets a warning instead of a compile error.
+### Project layout
 
-The full example is in [`examples/le-phare.json`](examples/le-phare.json) and [`examples/le-phare.ink`](examples/le-phare.ink).
+```
+shared/   used by both sides, imported as @shared/*: zod schemas, validateStory, emojis, API contract
+server/   Express (holds the key): /api/health, /api/generate, /api/rewrite; prompts; OpenAI calls
+client/   Vite + React: screens (Create, Editor, Reader, Import), lib (serializer, compiler, explorer,
+          layout, player, edits), state (store with undo, autosave)
+examples/ built-in story (.json + generated .ink) and the public inkle example
+docs/     design notes (01, 02), deviations from the spec (03), one doc per step (steps/)
+```
 
-## How the app checks a story
+### API
 
-Two independent checks. Neither one asks the LLM.
+| Route                | Body                                                                   | Response                                                  |
+| -------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------- |
+| `GET /api/health`    |                                                                        | `{ ok: true, openaiKey: boolean }` (never the key itself) |
+| `POST /api/generate` | `{ idea: string (1-500), readingLevel: "8-10" \| "11-12" \| "13-15" }` | `{ story, warnings }`, or `{ error }` in French           |
+| `POST /api/rewrite`  | `{ story, sceneId, instruction (1-300), variants: 1 \| 3 }`            | `{ variants }`: the words only, never the choice targets  |
 
-1. **Structure** ([`shared/validate.ts`](shared/validate.ts), runs on the JSON): valid and unique ids, no Ink reserved words, existing targets, exactly two endings (A and B), 4 to 6 narrative scenes, 2 to 3 choices each leading to different scenes, single emojis. It also searches the scene graph: every scene must be reachable from the start, and an ending must be reachable from every scene. The first real LLM answer passed every other check but had an unreachable ending, which is why this search exists. The server uses it to retry the LLM once, and the editor shows the issues as warnings.
-2. **Reachability** ([`client/src/lib/explorer.ts`](client/src/lib/explorer.ts), runs on the compiled Ink): plays every path with inkjs. At each decision point it saves the state, tries each choice, and restores. A decision point already explored is skipped, which is what makes loops terminate, and a step budget is the safety net. It reports reached and unreached scenes, reached endings, dead ends and runtime errors. Because it plays the compiled Ink, it also works on imported `.ink` files.
+**Generation** (`server/src/generate.ts`):
 
-## Design decisions so far
+1. Call the model (`gpt-5.4-mini` by default, reasoning effort `low`).
+2. Fix emojis.
+3. Run `validateStory`.
+4. If there are issues, retry **once** with the exact issues and the list of scenes that exist.
+5. If issues remain, return the story **with warnings** when the editor can fix them all (e.g. a choice to a scene that does not exist), otherwise return a clear 422.
 
-- **npm workspaces + a `shared/` folder** with a `@shared/*` alias, so the server and the client use the same validation code. This matters from step 4 onwards: the server retries the LLM when validation fails, and the editor uses the same rules to show warnings.
-- **`tsx`** runs the TypeScript server directly, with no build step.
-- **A Makefile** as a single entry point, with one npm script per target.
-- **zod as the single definition of the data model**: types, runtime validation and the strict schema sent to OpenAI come from the same code.
-- **The JSON is the source of truth, and Ink is an output format.** The structure is guaranteed by code, not by the LLM.
+Duration and tokens are logged. A generation costs about 1 cent and takes 5 to 20 s.
+
+## Design decisions and trade-offs
+
+| Decision                                                                                 | Rejected alternative                           | Trade-off accepted                                                                                                                                                       |
+| ---------------------------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The LLM returns **JSON**, which code turns into Ink                                      | The LLM writes Ink                             | Guaranteed structure and no syntax errors; in exchange, no Ink variables or conditions, which a mini-adventure does not need                                             |
+| **JSON = source of truth** in the editor, Ink = output                                   | Ink as the only source                         | Visual editing is possible; in exchange, an imported `.ink` opens in **text mode** (no map), because rebuilding our structure from arbitrary Ink is a project of its own |
+| Structure is checked **by code**: graph search on the JSON, explorer on the compiled Ink | Asking the LLM "is everything reachable?"      | An LLM can be wrong with confidence. Our very first real generation had an ending no choice led to, and the code caught it                                               |
+| **zod** as the single definition of the data model                                       | Separate TS types + JSON schema + validation   | One change updates the types, the runtime checks and the strict schema sent to OpenAI                                                                                    |
+| A rewrite schema with **no target field**                                                | Let the AI return the whole scene and check it | The AI cannot move an arrow even if the check were wrong: impossible by construction                                                                                     |
+| After the retry, **return fixable issues as warnings** instead of failing                | Always fail with an error                      | The author repairs one wrong arrow in two clicks instead of losing the story ("the author decides"); issues the editor cannot fix still fail                             |
+| **Emojis** as illustrations, stored as Ink tags                                          | Generated images                               | Free, instant and editable; rendering varies by system                                                                                                                   |
+| Columns by depth for the map                                                             | A layout library (dagre)                       | Predictable and enough for 6 to 10 scenes; nodes cannot be dragged                                                                                                       |
+| Autosave in **localStorage** only                                                        | Server storage, accounts                       | Nothing to set up; one story per browser                                                                                                                                 |
+
+Every difference with the original spec, and why, is in [`docs/03-deviations.md`](docs/03-deviations.md). Each step's details (what was built, tests, limits) are in [`docs/steps/`](docs/steps/).
+
+## Testing
+
+- **`make test`** runs 160 unit tests, with no network and no cost:
+  - serializer (every escaping rule as a compile-and-play round trip);
+  - compiler wrapper;
+  - explorer (loops, orphans, dead ends, imported Ink, depth guard);
+  - `validateStory` (including a real LLM answer kept as a regression fixture);
+  - generation and rewrite workflows with a **fake model** (retry, warnings, locked scene, structure checks);
+  - undo history, autosave, layout, edits, player, import/export.
+- **In the browser**, each step was also checked end to end with Playwright driving Chrome (scripts kept outside the repo): the acceptance scenarios of steps 5 to 10, an axe-core accessibility audit of every screen, and a keyboard-only scenario.
+- **Real OpenAI calls** were kept few and logged in the step docs: about 8 calls in total, around 7 cents.
+
+## Built with AI, and how it was checked
+
+- **Spec**: the design documents ([`docs/01-recap-cadrage.md`](docs/01-recap-cadrage.md), [`docs/02-prompt-implementation.md`](docs/02-prompt-implementation.md)) were provided by the author before any code was written.
+- **Code, tests and documentation** were written by **Claude Code** (Anthropic's AI coding assistant), one step at a time following `docs/02`, under the author's direction.
+- **Decisions taken by the author** along the way:
+  - English for code, comments, commits and docs;
+  - one doc per step, and a deviations document;
+  - a Makefile;
+  - adopting zod;
+  - each budget for real API calls;
+  - for generations that stay invalid: list the existing scenes in the retry, and let the author fix the remaining issues in the editor;
+  - keeping the compiled `.json` export.
+- **How each step was verified** before the author reviewed and committed it: type checking, lint, unit tests, browser scenarios, and real API calls where useful.
+- **What these checks caught** (all fixed, all documented in `docs/03-deviations.md`):
+  - an escaping rule (`\/*` still opens an Ink comment) and Ink choice tags that only work inside the brackets;
+  - LLM stories with an unreachable ending or a choice to a non-existent scene (hence the graph checks, the scene list in the retry, a little reasoning, and warnings);
+  - an ending that jumped outside the visible map;
+  - arrow labels stealing clicks;
+  - an endings counter one render late;
+  - a prototype explorer that overflowed the call stack on a complex imported story (reverted, depth guard added);
+  - colour contrast below WCAG AA.
+
+## Known limitations and next steps
+
+- **Not done from the spec's bonus list**: an AI coherence review (⚠️ on the map with « Corriger avec l'IA »), and « Changer d'idée » (regenerate what follows a scene).
+- **Imported Ink with state** (variables, read counts) is explored approximately: a branch that only opens under a condition can be missed. The screen says so.
+- No map for imported files, and no way to turn them back into our JSON format.
+- The edit panel cannot turn a scene into an ending (the two endings come from generation).
+- Quality rules that are not structural (sentence length, no repeated emoji) are asked of the LLM but not measured.
+- On dense maps, arrow labels can overlap. Nodes cannot be dragged.
+- The JS bundle is over 500 kB (the inkjs compiler plus React Flow). This is fine locally, and code splitting is a possible follow-up.
+- Possible next steps: the two missing AI features, optional illustrations on demand, sharing a story as a link, and a smarter explorer for stateful Ink.
 
 ## Examples and their sources
 

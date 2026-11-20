@@ -8,6 +8,7 @@ import type { Story } from "@shared/schema";
 import { QuickTest } from "../components/QuickTest";
 import { ExportBar } from "../components/ExportBar";
 import type { SaveStatus } from "../components/SavedIndicator";
+import { SceneList } from "../components/SceneList";
 import { ScenePanel } from "../components/ScenePanel";
 import { StoryMap } from "../components/StoryMap";
 import { VerificationPanel } from "../components/VerificationPanel";
@@ -73,6 +74,8 @@ export function Editor({
         <button type="button" className="button-link" onClick={onLeave}>
           ← Accueil
         </button>
+        {/* The visible title is an input; screen readers also get it as the page heading. */}
+        <h1 className="visually-hidden">{story.title}</h1>
         <label className="title-field">
           <span className="visually-hidden">Titre de l'histoire</span>
           <input
@@ -192,12 +195,15 @@ export function Editor({
                 onPlayFrom={openReader}
               />
             ) : (
-              <VerificationPanel
-                story={story}
-                analysis={analysis}
-                pending={pending}
-                onSelect={setSelectedId}
-              />
+              <>
+                <SceneList story={story} analysis={analysis} onSelect={setSelectedId} />
+                <VerificationPanel
+                  story={story}
+                  analysis={analysis}
+                  pending={pending}
+                  onSelect={setSelectedId}
+                />
+              </>
             )}
           </aside>
         </main>

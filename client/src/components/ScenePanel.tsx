@@ -1,6 +1,7 @@
 // Side panel for the selected scene: every field of the scene and its choices.
 // Every change goes through storyStore.edit, so it is undoable. Text fields pass a
 // coalesceKey, so typing a sentence is ONE undo step; discrete actions are one step each.
+import { useEffect, useRef } from "react";
 import type { Scene, Story } from "@shared/schema";
 import { Mood } from "@shared/schema";
 import type { ValidationIssue } from "@shared/validate";
@@ -38,6 +39,10 @@ export function ScenePanel({ story, scene, issues, onSelect, onPlayFrom }: Props
   const edit = storyStore.edit;
   const key = (field: string) => `scene:${scene.id}:${field}`;
   const isStart = scene.id === story.startSceneId;
+  // Opening a scene (map, scene list, report link) moves the focus to its panel heading,
+  // so keyboard and screen-reader users land where the editing happens.
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => heading.current?.focus(), []);
   const sceneIds = new Set(story.scenes.map((s) => s.id));
 
   const onDelete = () => {
@@ -57,7 +62,7 @@ export function ScenePanel({ story, scene, issues, onSelect, onPlayFrom }: Props
   return (
     <div className="scene-panel">
       <div className="panel-heading">
-        <h2>
+        <h2 ref={heading} tabIndex={-1}>
           <span aria-hidden="true">{scene.emoji}</span>{" "}
           {scene.ending ? `Fin ${scene.ending.kind}` : "Scène"}
           {isStart && <span className="tag">Départ</span>}
