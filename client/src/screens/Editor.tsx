@@ -6,11 +6,12 @@
 import { useState } from "react";
 import type { Story } from "@shared/schema";
 import { QuickTest } from "../components/QuickTest";
-import { SavedIndicator, type SaveStatus } from "../components/SavedIndicator";
+import { ExportBar } from "../components/ExportBar";
+import type { SaveStatus } from "../components/SavedIndicator";
 import { ScenePanel } from "../components/ScenePanel";
 import { StoryMap } from "../components/StoryMap";
 import { VerificationPanel } from "../components/VerificationPanel";
-import { exportInk } from "../lib/download";
+import { storyToInk } from "../lib/inkSerializer";
 import { storyStore, type StoryHistory } from "../state/storyStore";
 import { useStoryAnalysis } from "../state/useStoryAnalysis";
 import { Reader } from "./Reader";
@@ -202,12 +203,12 @@ export function Editor({
         </main>
       )}
 
-      <footer className={`action-bar${mode === "read" ? " is-quiet" : ""}`}>
-        <button type="button" className="button-primary" onClick={() => exportInk(story)}>
-          ⬇ Exporter le .ink
-        </button>
-        <SavedIndicator status={saveStatus} />
-      </footer>
+      <ExportBar
+        getInk={() => storyToInk(storyStore.getState().present ?? story)}
+        title={story.title}
+        saveStatus={saveStatus}
+        quiet={mode === "read"}
+      />
     </div>
   );
 }

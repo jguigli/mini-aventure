@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Story, type Story as StoryT } from "@shared/schema";
 import examplePhare from "../../../examples/le-phare.json";
 import { analyzeStory } from "./analysis";
-import { inkFileName } from "./download";
+import { fileBaseName } from "./download";
 import { COLUMN_WIDTH, computeLayout } from "./layout";
 import {
   addChoice,
@@ -108,8 +108,8 @@ describe("storyEdits", () => {
   });
 
   it("builds the export file name from the title", () => {
-    expect(inkFileName("Le phare qui murmure")).toBe("le-phare-qui-murmure.ink");
-    expect(inkFileName("???")).toBe("aventure.ink");
+    expect(fileBaseName("Le phare qui murmure")).toBe("le-phare-qui-murmure");
+    expect(fileBaseName("???")).toBe("aventure");
   });
 });
 

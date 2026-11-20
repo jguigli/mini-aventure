@@ -10,16 +10,17 @@ A local web app to create short interactive adventures for readers aged 8 to 15,
 
 Work in progress, built step by step (see [`docs/steps/`](docs/steps/)). Deviations from the original spec are listed in [`docs/03-deviations.md`](docs/03-deviations.md).
 
-| Step | Content                                                                       | Status |
-| ---- | ----------------------------------------------------------------------------- | ------ |
-| 1    | Project skeleton, health check, Makefile                                      | ✅     |
-| 2    | Ink core: zod schema, JSON → Ink serializer, compilation, example story       | ✅     |
-| 3    | Reachability explorer, structural validation, emoji checks                    | ✅     |
-| 4    | Story generation with OpenAI (structured outputs, validation, one retry)      | ✅     |
-| 5    | Creation screen, undo/redo history, browser autosave and resume               | ✅     |
-| 6    | Map editor: React Flow map, scene panel, live checks, quick test, .ink export | ✅     |
-| 7    | Reader: plays the compiled Ink, both endings, play from a scene, keyboard     | ✅     |
-| 8–10 | Import/export, AI editing, polish                                             | ⏳     |
+| Step | Content                                                                                       | Status |
+| ---- | --------------------------------------------------------------------------------------------- | ------ |
+| 1    | Project skeleton, health check, Makefile                                                      | ✅     |
+| 2    | Ink core: zod schema, JSON → Ink serializer, compilation, example story                       | ✅     |
+| 3    | Reachability explorer, structural validation, emoji checks                                    | ✅     |
+| 4    | Story generation with OpenAI (structured outputs, validation, one retry)                      | ✅     |
+| 5    | Creation screen, undo/redo history, browser autosave and resume                               | ✅     |
+| 6    | Map editor: React Flow map, scene panel, live checks, quick test, .ink export                 | ✅     |
+| 7    | Reader: plays the compiled Ink, both endings, play from a scene, keyboard                     | ✅     |
+| 8    | Import (.ink in text mode) and export (.ink, compiled .json, view code), public inkle example | ✅     |
+| 9–10 | AI editing, polish                                                                            | ⏳     |
 
 ## Requirements
 
@@ -94,9 +95,10 @@ curl -X POST localhost:3001/api/generate -H 'content-type: application/json' \
 3. **Live checks**: about 0.3 s after each change, the story is validated, serialized to Ink, compiled by inkjs and explored. Unreachable scenes turn grey and dashed, and problems get a ⚠️. **« Vérifier »** opens the full report. Problems warn, they never block.
 4. **Quick test**: under the map, click choices to walk through the story. The path lights up on the map, and « Réinitialiser » starts over.
 5. **Read**: switch to **📖 Lecture** in the header, or click **« ▶ Jouer depuis ici »** on a scene. The Reader plays the **compiled Ink** (not the JSON), with a big emoji, the scene title and text, and the choices as big buttons (Tab / Enter, or keys 1-9). At an ending it shows the ending's label, « Rejouer » and « Fins découvertes : x/2 ». **« ✏️ Modifier cette scène »** goes back to Édition with that scene selected.
-6. **Export**: **« ⬇ Exporter le .ink »** in the bottom bar (in Édition and in Lecture) downloads `<title>.ink`, serialized from the current story.
-7. **Undo / redo**: Ctrl+Z / Ctrl+Shift+Z (Cmd on macOS), or the ↶ / ↷ buttons. Typing in a field is undone in one step. Inside a text field, Ctrl+Z is the browser's own undo for that field.
-8. **Autosave**: the story is saved in the browser about 0.5 s after each change (« ✓ Enregistré »). After a refresh, the home screen offers **« Reprendre ton aventure »**.
+6. **Export**: **« ⬇ Exporter le .ink »** in the bottom bar (in Édition and in Lecture) downloads `<title>.ink`, serialized from the current story. **« Autres formats »** offers the **compiled `.json`**, which ink runtimes such as inkjs or the Unity plugin load, and **« Voir le code Ink »**, a dialog with a Copy button.
+7. **Import**: on the home screen, **« Importer un .ink »** opens any `.ink` file in **text mode**: a code editor and the player side by side, with the explorer's results (knots reached, endings, dead ends), updated as you type. Imported files are not shown on the map (an assumed choice: rebuilding our structure from arbitrary Ink is out of scope) and are not autosaved. **« Exemple Ink d'inkle »** opens the public example.
+8. **Undo / redo**: Ctrl+Z / Ctrl+Shift+Z (Cmd on macOS), or the ↶ / ↷ buttons. Typing in a field is undone in one step. Inside a text field, Ctrl+Z is the browser's own undo for that field.
+9. **Autosave**: the story is saved in the browser about 0.5 s after each change (« ✓ Enregistré »). After a refresh, the home screen offers **« Reprendre ton aventure »**.
 
 If the AI cannot fix a problem even after its retry, but the problem can be fixed in the editor (e.g. a choice pointing to a scene that does not exist), the story still opens, with a banner and the problem flagged on the map.
 
@@ -161,3 +163,10 @@ Two independent checks. Neither one asks the LLM.
 - **A Makefile** as a single entry point, with one npm script per target.
 - **zod as the single definition of the data model**: types, runtime validation and the strict schema sent to OpenAI come from the same code.
 - **The JSON is the source of truth, and Ink is an output format.** The structure is guaranteed by code, not by the LLM.
+
+## Examples and their sources
+
+| File                                                                                 | What it is                                                                                                                                 | Source and license                                                                                                                                                                                                                                |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`examples/le-phare.json`](examples/le-phare.json) / [`.ink`](examples/le-phare.ink) | Built-in story « Le phare qui murmure » (5 scenes, 2 endings, one loop). The `.ink` is generated from the JSON and kept in sync by a test. | Written for this project.                                                                                                                                                                                                                         |
+| [`examples/monsieur-fogg.ink`](examples/monsieur-fogg.ink)                           | « A conversation with nested nodes », copied verbatim from inkle's _Writing with ink_. Weave syntax, no knots, one ending.                 | [inkle/ink, Documentation/WritingWithInk.md](https://github.com/inkle/ink/blob/4011b8c0a01828c61dd2331613c1038a3a5f294b/Documentation/WritingWithInk.md#example-a-conversation-with-nested-nodes), **MIT License**, Copyright (c) 2025 inkle Ltd. |

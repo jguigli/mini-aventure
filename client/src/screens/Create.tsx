@@ -4,10 +4,16 @@ import { useRef, useState, type FormEvent } from "react";
 import { MAX_IDEA_LENGTH } from "@shared/api";
 import { Story, type ReadingLevel } from "@shared/schema";
 import examplePhare from "../../../examples/le-phare.json";
+// Public example from inkle's documentation (MIT), loaded as text by Vite.
+import exampleFogg from "../../../examples/monsieur-fogg.ink?raw";
 import { GeneratingStory } from "../components/GeneratingStory";
 import { ReadingLevelPicker } from "../components/ReadingLevelPicker";
 import { ApiClientError, requestStory } from "../lib/api";
 import type { SavedStory } from "../state/autosave";
+import type { ImportedInk } from "./ImportScreen";
+
+/** Imported files above this size are refused (a story is a few KB). */
+const MAX_IMPORT_BYTES = 1_000_000;
 
 const IDEA_PLACEHOLDER =
   "Ex. : Une gardienne de phare entend une voix monter de la mer… ou : un robot jardinier trouve une graine qui parle.";
@@ -20,11 +26,13 @@ interface Props {
   onStory: (story: Story, warnings?: number) => void;
   /** null while unknown, false when the server reports no OpenAI key. */
   hasApiKey: boolean | null;
+  /** Opens an .ink file in text mode. */
+  onImport: (file: ImportedInk) => void;
 }
 
 type Phase = { kind: "idle" } | { kind: "generating" } | { kind: "error"; message: string };
 
-export function Create({ saved, onResume, onDiscardSaved, onStory, hasApiKey }: Props) {
+export function Create({ saved, onResume, onDiscardSaved, onStory, hasApiKey, onImport }: Props) {
   const [idea, setIdea] = useState("");
   const [level, setLevel] = useState<ReadingLevel>("11-12");
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
@@ -60,6 +68,24 @@ export function Create({ saved, onResume, onDiscardSaved, onStory, hasApiKey }: 
   };
 
   const loadExample = () => onStory(Story.parse(examplePhare));
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const importFile = async (file: File | undefined) => {
+    if (!file) return;
+    if (file.size > MAX_IMPORT_BYTES) {
+      setPhase({
+        kind: "error",
+        message: "Ce fichier est trop gros pour une mini-aventure (1 Mo au plus).",
+      });
+      return;
+    }
+    const source = await file.text();
+    if (!source.trim()) {
+      setPhase({ kind: "error", message: "Ce fichier est vide." });
+      return;
+    }
+    onImport({ source, fileName: file.name });
+  };
 
   return (
     <main className="page">
@@ -141,8 +167,30 @@ export function Create({ saved, onResume, onDiscardSaved, onStory, hasApiKey }: 
                 Charger l'exemple
               </button>
               <span aria-hidden="true">·</span>
-              <button type="button" className="button-link" disabled title="Disponible bientôt">
+              <button
+                type="button"
+                className="button-link"
+                onClick={() => fileInput.current?.click()}
+              >
                 Importer un .ink
+              </button>
+              <input
+                ref={fileInput}
+                type="file"
+                accept=".ink,text/plain"
+                hidden
+                onChange={(event) => {
+                  void importFile(event.target.files?.[0]);
+                  event.target.value = ""; // allow re-importing the same file
+                }}
+              />
+              <span aria-hidden="true">·</span>
+              <button
+                type="button"
+                className="button-link"
+                onClick={() => onImport({ source: exampleFogg, fileName: "monsieur-fogg.ink" })}
+              >
+                Exemple Ink d'inkle
               </button>
             </div>
           </form>

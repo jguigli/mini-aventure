@@ -6,6 +6,7 @@ import type { Story } from "@shared/schema";
 import type { SaveStatus } from "./components/SavedIndicator";
 import { Create } from "./screens/Create";
 import { Editor } from "./screens/Editor";
+import { ImportScreen, type ImportedInk } from "./screens/ImportScreen";
 import { clearSavedStory, loadSavedStory, startAutosave } from "./state/autosave";
 import { storyStore, useStoryHistory } from "./state/storyStore";
 import { useUndoShortcuts } from "./state/useUndoShortcuts";
@@ -18,6 +19,8 @@ export default function App() {
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
   // Number of issues the AI left in the story it just generated (shown once in the editor).
   const [generationWarnings, setGenerationWarnings] = useState(0);
+  // An imported .ink (text mode). Separate from the story store: not autosaved, no undo history.
+  const [imported, setImported] = useState<ImportedInk | null>(null);
   // Endings found in Lecture, kept in memory for the session (reset when another story opens).
   const [discoveredEndings, setDiscoveredEndings] = useState<Set<string>>(new Set());
   const onEndingDiscovered = useCallback(
@@ -61,8 +64,13 @@ export default function App() {
     );
   }
 
+  if (imported) {
+    return <ImportScreen file={imported} onLeave={() => setImported(null)} />;
+  }
+
   return (
     <Create
+      onImport={setImported}
       saved={saved}
       hasApiKey={hasApiKey}
       onStory={openStory}

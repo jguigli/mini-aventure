@@ -38,9 +38,15 @@ export interface ExploreResult {
 }
 
 export const DEFAULT_MAX_STEPS = 10_000;
+/**
+ * Maximum depth of the search (choices in a row). The search is recursive: without this
+ * guard, an imported .ink with many distinct states could overflow the call stack and
+ * crash the page. Beyond it, the exploration stops and reports `truncated`.
+ */
+export const MAX_DEPTH = 1_000;
 
 /** Name of the knot a path belongs to: "cuisine.placard.0.7" → "cuisine". */
-const knotOf = (path: string) => path.split(".")[0];
+export const knotOf = (path: string) => path.split(".")[0];
 
 /** Top-level knots of a compiled story ("global decl" holds VAR declarations, it is not a knot). */
 function knotNames(story: InkStory): string[] {
@@ -93,7 +99,11 @@ export function explore(story: InkStory, opts: ExploreOptions = {}): ExploreResu
    * choice leading here was made (used when this segment has no scene of its own,
    * e.g. a choice whose target is missing).
    */
-  function visit(fromScene: string | null): void {
+  function visit(fromScene: string | null, depth: number): void {
+    if (depth > MAX_DEPTH) {
+      truncated = true;
+      return;
+    }
     // 1. Run until the next decision point or the end, collecting tags.
     const before = visitCounts();
     const tags: string[] = [];
@@ -159,13 +169,13 @@ export function explore(story: InkStory, opts: ExploreOptions = {}): ExploreResu
       }
       steps++;
       story.ChooseChoiceIndex(i);
-      visit(scene);
+      visit(scene, depth + 1);
       story.state.LoadJson(saved);
     }
   }
 
   story.ResetState();
-  visit(null);
+  visit(null, 0);
   story.ResetState();
 
   return {

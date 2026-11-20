@@ -341,3 +341,35 @@ Each entry gives: **Spec** (what 02 says) → **Done** (what was implemented) �
 ### Map fix found while testing the Reader
 - **Done:** arrows and their emoji labels on the map no longer catch clicks (`pointer-events: none` on `.react-flow__edge` and `.react-flow__edge-textwrapper`, which React Flow re-enables by default).
 - **Why:** the browser test could not click « Le carnet du gardien », because an arrow label was lying over it. Arrows are display-only in this app.
+
+---
+
+## Step 8 — Import and export
+
+### Public example: inkle's "conversation with nested nodes", not a full game
+- **Spec:** add a public `.ink`, for example from inkle's "Writing with Ink" documentation or the `inkle/ink` repo, with its source URL and license.
+- **Done:** `examples/monsieur-fogg.ink` is the "Example: a conversation with nested nodes" from *Writing with ink*. It is copied verbatim (only the Markdown tab indentation was removed). A header comment gives the source URL, pinned to commit `4011b8c`, and the license (MIT, "Copyright (c) 2025 inkle Ltd."). The README lists it too. A « Exemple Ink d'inkle » link on the home screen opens it directly (loaded with Vite's `?raw`).
+- **Rejected candidates, and why:**
+  - **`LD41 Emoji` ("⏰", Pat Scott, `inkle/ink-library`, MIT):** a fun all-emoji story, but it contains 🖕, 🔫, 🔪 and 🚬, which is not suitable for an app for 8-15 year-olds. It also showed a real limit of our explorer: 0 endings found and the `finale` knot reported unreachable, because its branches are gated by variables and read counts (see below).
+  - **The Intercept (`inkle/the-intercept`):** no license declared on the repository.
+  - **"back_in_london" (*Writing with ink*):** ends without `-> END`, which is a runtime error.
+  - **The `.ink` files in `inkle/ink`:** a few bytes of test fixtures.
+- **Why this one:** complete (ends with `-> END`, and the documentation even gives two playthroughs that the tests replay), suitable for children, official, MIT. It also uses *weave* syntax (nested choices and gathers, no knots), which our app never generates, so it is a real test of the text mode.
+
+### Explorer: tried variable-aware keys, kept a depth guard instead
+- **Context:** on `LD41 Emoji`, the explorer found no ending, because it treats two visits of the same choices with different variable values as the same decision point.
+- **Tried:** adding the global `VAR` values to the decision key. On `LD41 Emoji` this exploded: a `time` counter makes every state distinct, and the recursive search **overflowed the call stack**.
+- **Done:** the prototype was reverted (a faithful explorer for arbitrary Ink with state is out of scope). But the crash showed a real risk, so the search now stops at **`MAX_DEPTH = 1000`** choices in a row and reports `truncated` instead of crashing the page. The import screen says that exploration is approximate with variables or conditions.
+
+### Player recognises endings in imported Ink
+- **Done:** `player.ts` takes an optional list of knots. For an imported `.ink` without our tags, any place where the story stops counts as an ending, named after the knot it stopped in. This is the same rule as the explorer, so « Fins découvertes : x/N » works for imported files (N comes from the explorer).
+
+### One player component for both screens
+- **Done:** the player card was extracted from `Reader.tsx` into `components/InkPlayer.tsx`, used by the Reader (our stories) and by the import screen (any `.ink`). On the import screen, focus only follows the reader's own actions, never a recompilation, so typing in the code editor is never interrupted.
+
+### Export menu
+- **Spec:** next to « ⬇ Exporter le .ink », a small menu with « Exporter le .json compilé » and « Voir le code Ink » (with a Copy button).
+- **Done as specified.** The menu is a native `<details>` element and the code viewer is a native `<dialog>` (focus trap and Escape for free). The `.json` is `story.ToJson()` from inkjs, compiled from the current Ink at click time. If the story does not compile, an inline message explains why nothing is downloaded. The same bar is used on the import screen, without « Voir le code Ink » (the code is already on screen).
+
+### Import limits
+- **Done:** files over 1 MB and empty files are refused with a message, and the same file can be imported twice in a row. Leaving the import screen with unsaved changes asks for confirmation (the import is not autosaved).

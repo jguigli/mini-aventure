@@ -1,12 +1,10 @@
-// File export: the .ink is always serialized from the CURRENT JSON at click time,
-// so the download contains the latest edit even if the live check has not run yet.
-import type { Story } from "@shared/schema";
-import { storyToInk } from "./inkSerializer";
+// File downloads. Exports are always produced from the CURRENT source at click time,
+// so a download contains the latest edit even if the live check has not run yet.
 import { slugify } from "./storyEdits";
 
-/** "Le phare qui murmure" → "le-phare-qui-murmure.ink" */
-export function inkFileName(title: string): string {
-  return `${slugify(title, "-") || "aventure"}.ink`;
+/** "Le phare qui murmure" → "le-phare-qui-murmure" (then .ink / .json). */
+export function fileBaseName(title: string): string {
+  return slugify(title, "-") || "aventure";
 }
 
 export function downloadText(fileName: string, content: string, type = "text/plain"): void {
@@ -17,8 +15,4 @@ export function downloadText(fileName: string, content: string, type = "text/pla
   link.click();
   // Give the browser time to start the download before releasing the blob.
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-export function exportInk(story: Story): void {
-  downloadText(inkFileName(story.title), storyToInk(story));
 }
