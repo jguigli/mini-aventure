@@ -5,20 +5,25 @@ Application web locale : une idée → un LLM (OpenAI) génère une mini-aventur
 **Spécification de référence : [docs/02-prompt-implementation.md](docs/02-prompt-implementation.md).** Relis la partie A et l'étape en cours avant de coder. `docs/01-recap-cadrage.md` est un récap personnel : ne pas s'en servir comme spec (en cas de divergence, la 02 fait foi).
 
 ## Principe non négociable
+
 **Le LLM propose, le code vérifie, l'auteur décide.**
+
 - Le LLM renvoie du JSON (structured outputs, schéma strict), jamais d'Ink.
 - Le JSON `Story` est la source de vérité ; l'Ink en est dérivé par un sérialiseur déterministe.
 - La structure est vérifiée par le code (`validateStory` + explorateur inkjs), jamais par le LLM.
 - Toute proposition de l'IA passe par un aperçu accepter/refuser, et « Garder » est annulable.
 
 ## Stack
+
 - Monorepo npm workspaces : `client/` (Vite + React + TS), `server/` (Express + TS, lancé avec `tsx`), `shared/` (schémas zod, validation, emojis) importé via l'alias `@shared/*`.
 - **zod** = définition unique du modèle : types (`z.infer`), validation à l'exécution et schéma strict OpenAI (helper zod du SDK).
 - `inkjs` ≥ 2.2 (Compiler + Story, côté client), `@xyflow/react`, SDK `openai`, `dotenv`, Vitest, `concurrently`.
 - CSS global avec variables, aucun framework UI. Pas de dagre, pas de lib de state (un store maison suffit).
 
 ## Commandes
+
 > Un `Makefile` à la racine est le point d'entrée (créé à l'étape 1, tenu à jour ensuite). Il appelle les scripts npm.
+
 - `make help` — liste des commandes
 - `make install` — `npm install` (tous les workspaces)
 - `make env` — crée `server/.env` depuis `.env.example` **seulement s'il n'existe pas** (ne jamais écraser la clé)
@@ -27,6 +32,7 @@ Application web locale : une idée → un LLM (OpenAI) génère une mini-aventur
 - `make lint` / `make format` / `make build` / `make clean`
 
 ## Règles de travail
+
 - **Une étape à la fois.** Ne commence pas l'étape suivante sans demande explicite.
 - **Fin d'étape : écrire `docs/steps/NN-<slug>.md`** (ex. `docs/steps/01-skeleton.md`), **in English**, avec :
   1. Objectif de l'étape (une ou deux phrases).
@@ -45,6 +51,7 @@ Application web locale : une idée → un LLM (OpenAI) génère une mini-aventur
 - Mettre à jour `README.md` à chaque étape (**rédigé en anglais**).
 
 ## Conventions de code
+
 - Identifiants, noms de fichiers, **messages de commit, README et docs `docs/steps/` en anglais**. **Commentaires du code, UI, messages d'erreur, prompts et histoires en français.**
 - Commenter les endroits clés (sérialiseur, explorateur, prompts, schéma, retry) : l'utilisateur doit pouvoir tout expliquer à l'oral. Pas de commentaires décoratifs.
 - Fonctions du cœur **pures et testées** : `storyToInk`, `explore`, `computeLayout`, `validateStory`.
@@ -52,6 +59,7 @@ Application web locale : une idée → un LLM (OpenAI) génère une mini-aventur
 - TypeScript strict, pas de `any` sans justification.
 
 ## Pièges connus (le détail est dans la doc 02)
+
 - `validateStory` est dans `shared/` : serveur **et** client s'en servent.
 - Schéma envoyé au LLM (`LlmStory`) : pas de champ optionnel (`.nullable()`, jamais `.optional()`), pas de `locked`. La cardinalité est vérifiée par `validateStory` + une relance.
 - Explorateur : ne jamais dédoublonner sur `state.ToJson()` (les compteurs de visite changent à chaque passage, donc aucune boucle n'est détectée).
@@ -60,4 +68,5 @@ Application web locale : une idée → un LLM (OpenAI) génère une mini-aventur
 - Ctrl+Z de l'app inactif dans les `input`/`textarea` ; frappes regroupées en une entrée d'historique.
 
 ## Arborescence
+
 Voir la doc 02, partie A (« Arborescence cible »).
