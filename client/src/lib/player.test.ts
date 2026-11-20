@@ -49,6 +49,17 @@ describe("player (reads the compiled Ink, not the JSON)", () => {
     expect(passage.ending).toEqual({ kind: "B", label: "La voix perdue" });
   });
 
+  it("shows the outcome of the choice as a transition, above the next scene", () => {
+    const ink = compile(phare());
+    const passage = pick(ink, startStory(ink), /crique/);
+    expect(passage.transition).toEqual([
+      "Lina descend le sentier glissant jusqu'à la petite crique.",
+    ]);
+    expect(passage.sceneTitle).toBe("Le coquillage qui chante");
+    expect(passage.paragraphs[0]).toMatch(/^Les galets crissent/);
+    expect(startStory(ink).transition).toEqual([]); // nothing before the first scene
+  });
+
   it("starts from a given scene (« Jouer depuis ici »)", () => {
     const passage = startStory(compile(phare()), "carnet");
     expect(passage.sceneTitle).toBe("Le carnet du gardien");

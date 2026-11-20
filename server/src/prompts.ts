@@ -1,7 +1,7 @@
 // Prompts sent to the LLM. They are in French on purpose: the stories must be in French,
 // and a French prompt is the most reliable way to get French output.
 // The structure rules here mirror shared/validate.ts: the prompt asks, the code checks.
-import type { LlmStory, ReadingLevel, Scene, Story } from "@shared/schema";
+import type { ReadingLevel, Scene, Story } from "@shared/schema";
 import type { ValidationIssue } from "@shared/validate";
 import { INK_RESERVED_WORDS, LIMITS } from "@shared/validate";
 
@@ -53,6 +53,7 @@ STRUCTURE (obligatoire, elle est vérifiée par un programme)
 - "startSceneId" est l'identifiant de la première scène narrative, qui n'est pas une fin.
 - Chaque "targetSceneId" est l'identifiant d'une scène qui existe. Aucun choix ne ramène à sa propre scène.
 - Dans une même scène, chaque choix mène à une scène différente.
+- Pour chaque choix, décide d'abord sa destination ("targetSceneId"), puis écris son libellé et son "outcome".
 - Toutes les scènes doivent être atteignables depuis la scène de départ, et chaque chemin doit pouvoir mener à une fin.
 - La fin A ET la fin B doivent chacune être la destination d'au moins un choix (c'est l'erreur la plus fréquente : vérifie-le avant de répondre).
 - Un choix peut ramener à une scène déjà visitée, mais pas d'impasse.
@@ -61,6 +62,10 @@ STRUCTURE (obligatoire, elle est vérifiée par un programme)
 - Identifiants de choix : "c1", "c2", "c3" dans chaque scène.
 
 ÉCRITURE
+- Chaque choix a un "outcome" : une phrase courte qui raconte ce que fait le héros juste après ce choix et l'amène naturellement dans la scène de destination. Le lecteur la lit juste avant cette scène : c'est elle qui fait le lien.
+- Le libellé du choix, son "outcome" et la scène de destination doivent former une suite logique : ce que le lecteur choisit doit vraiment arriver.
+- Quand plusieurs choix mènent à la même scène, le texte de cette scène ne doit pas supposer un choix précis : chaque "outcome" fait sa propre transition.
+- La scène de départ est une vraie introduction, car le lecteur ne connaît encore rien : présente le héros (son prénom et un détail qui le rend attachant), le lieu, et ce qui déclenche l'aventure, avant de proposer le premier choix. Elle peut avoir une phrase de plus que les autres scènes.
 - Des fins vraiment distinctes, et des choix qui ont une conséquence réelle sur la suite.
 - Libellés de choix courts : 8 mots au plus, à l'infinitif ou à l'impératif.
 - "mood" décrit l'ambiance de la scène : calme, mystere, tension, joie ou sombre.
@@ -98,10 +103,7 @@ Mets "readingLevel" à "${readingLevel}".`;
  * ("escalier_cache") tended to send the same mistake back: it was told what was wrong,
  * not what the valid choices were.
  */
-export function buildRetryInput(
-  issues: ValidationIssue[],
-  story: Pick<LlmStory, "scenes">,
-): string {
+export function buildRetryInput(issues: ValidationIssue[], story: Pick<Story, "scenes">): string {
   const lines = issues.map((issue) => {
     const where = [
       issue.sceneId && `scène « ${issue.sceneId} »`,
@@ -137,7 +139,8 @@ export const REWRITE_SYSTEM_PROMPT = `Tu es un auteur de fiction interactive jeu
 RÈGLES (vérifiées par un programme)
 - Écris TOUJOURS en français.
 - Ne change pas la structure : renvoie exactement les mêmes choix, avec les mêmes "id", dans le même ordre.
-- Chaque choix mène toujours à la même scène (indiquée dans "mène à") : son libellé doit rester cohérent avec cette destination.
+- Chaque choix mène toujours à la même scène (indiquée dans "mène à") : son libellé et son "outcome" (la phrase lue juste après le choix, qui fait le lien avec la scène suivante) doivent rester cohérents avec cette destination.
+- Plusieurs chemins peuvent mener à cette scène : son texte ne doit pas supposer un choix précis.
 - Si la scène est une fin, remplis "endingLabel" (un court libellé de fin) ; sinon "endingLabel" vaut null.
 - Reste cohérent avec le reste de l'histoire : mêmes personnages, même univers, même enchaînement.
 - Respecte le niveau de lecture indiqué (longueur des phrases, nombre de phrases, vocabulaire).
@@ -171,6 +174,7 @@ export function buildRewriteInput(
       id: c.id,
       label: c.label,
       emoji: c.emoji,
+      outcome: c.outcome ?? "",
       "mène à": titleOf(c.targetSceneId),
     })),
     ending: scene.ending,

@@ -152,6 +152,38 @@ describe("escaping", () => {
   });
 });
 
+describe("choice outcomes (the sentence shown right after a choice)", () => {
+  it("prints the outcome after the click, as its own line before the next scene", () => {
+    const story = compileOrFail(
+      tinyStory({
+        choices: [
+          {
+            id: "c1",
+            label: "Continuer",
+            emoji: "👣",
+            targetSceneId: "fin",
+            outcome: "Il avance -> doucement [vraiment].",
+          },
+        ],
+      }),
+    );
+    readAll(story);
+    expect(story.currentChoices[0].text).toBe("Continuer"); // not part of the button
+    story.ChooseChoiceIndex(0);
+    const lines: string[] = [];
+    while (story.canContinue) lines.push(story.Continue()!);
+    expect(lines).toEqual(["Il avance -> doucement [vraiment].\n", "Fin.\n"]);
+  });
+
+  it("compiles an outcome on a choice whose target is missing", () => {
+    compileOrFail(
+      tinyStory({
+        choices: [{ id: "c1", label: "X", emoji: "👣", targetSceneId: "", outcome: "Il hésite." }],
+      }),
+    );
+  });
+});
+
 describe("robustness while editing", () => {
   it("compiles a choice whose target does not exist, and ends the story there", () => {
     const story = compileOrFail(

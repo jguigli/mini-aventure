@@ -38,7 +38,7 @@ Open **http://localhost:5173**. Without a key, the server still starts (it logs 
 | ---------------------------------------- | ------------------------------------------ |
 | `make help`                              | List the commands                          |
 | `make install` / `make env` / `make dev` | Install, create `server/.env`, run         |
-| `make test`                              | Unit tests (Vitest, 160 tests, no network) |
+| `make test`                              | Unit tests (Vitest, 163 tests, no network) |
 | `make lint` / `make format`              | ESLint / Prettier                          |
 | `make build`                             | Type-check both apps and build the client  |
 | `make clean`                             | Remove `node_modules` and build outputs    |
@@ -54,7 +54,7 @@ Open **http://localhost:5173**. Without a key, the server still starts (it logs 
 
 ## Features
 
-- **Generation** with OpenAI structured outputs. The story is JSON that must match a zod schema, with a plan written first. It has 4 to 6 scenes plus 2 endings, and is adapted to three reading levels (8-10, 11-12, 13-15) with content suitable for minors.
+- **Generation** with OpenAI structured outputs. The story is JSON that must match a zod schema, with a plan written first. It has 4 to 6 scenes plus 2 endings, an introductory first scene, and a transition sentence for every choice. It is adapted to three reading levels (8-10, 11-12, 13-15) with content suitable for minors.
 - **Map editor** (React Flow): edit titles, emojis, moods, texts and choices; add or delete choices and scenes; lock a scene 🔒. A **quick test** under the map lets you click through the story and lights up the path.
 - **Live checks**, about 0.3 s after each change: structure (`validateStory`), Ink compilation (inkjs), and a **reachability explorer** that plays every path. Problems warn, they never block.
 - **✨ Rewrite a scene with the AI**: quick actions or a free instruction, 1 or 3 proposals, a before/after preview, then keep (undoable) or cancel.
@@ -95,10 +95,15 @@ Excerpt of the generated Ink ([full example](examples/le-phare.ink)):
 # emoji: 🐚
 # mood: mystere
 Les galets crissent sous les bottes de Lina. …
-+ [Porter le coquillage jusqu'aux vagues #emoji: 🌊] -> fin_lumiere
-+ [Le garder dans sa poche #emoji: 🎒] -> fin_brume
-+ [Remonter au sommet #emoji: 🗼] -> sommet
++ [Porter le coquillage jusqu'aux vagues #emoji: 🌊] Lina serre le coquillage contre elle et avance dans l'écume.
+  -> fin_lumiere
++ [Le garder dans sa poche #emoji: 🎒] Lina glisse le coquillage dans sa poche et s'assoit sur un rocher.
+  -> fin_brume
++ [Remonter au sommet #emoji: 🗼] Lina remonte au sommet, le cœur battant.
+  -> sommet
 ```
+
+Each choice carries an **outcome**, the sentence after `]`, which Ink prints right after the click. A scene reached by several choices stays neutral, and each choice's outcome makes its own transition into it. The Reader shows it in italics above the next scene. Without it, a shared scene could only follow from one of the choices leading to it.
 
 ### Project layout
 
@@ -147,7 +152,7 @@ Every difference with the original spec, and why, is in [`docs/03-deviations.md`
 
 ## Testing
 
-- **`make test`** runs 160 unit tests, with no network and no cost:
+- **`make test`** runs 163 unit tests, with no network and no cost:
   - serializer (every escaping rule as a compile-and-play round trip);
   - compiler wrapper;
   - explorer (loops, orphans, dead ends, imported Ink, depth guard);
@@ -155,7 +160,7 @@ Every difference with the original spec, and why, is in [`docs/03-deviations.md`
   - generation and rewrite workflows with a **fake model** (retry, warnings, locked scene, structure checks);
   - undo history, autosave, layout, edits, player, import/export.
 - **In the browser**, each step was also checked end to end with Playwright driving Chrome (scripts kept outside the repo): the acceptance scenarios of steps 5 to 10, an axe-core accessibility audit of every screen, and a keyboard-only scenario.
-- **Real OpenAI calls** were kept few and logged in the step docs: about 8 calls in total, around 7 cents.
+- **Real OpenAI calls** were kept few and logged in the step docs: about 10 calls in total, around 9 cents.
 
 ## Built with AI, and how it was checked
 
@@ -170,6 +175,7 @@ Every difference with the original spec, and why, is in [`docs/03-deviations.md`
   - for generations that stay invalid: list the existing scenes in the retry, and let the author fix the remaining issues in the editor;
   - keeping the compiled `.json` export.
 - **How each step was verified** before the author reviewed and committed it: type checking, lint, unit tests, browser scenarios, and real API calls where useful.
+- **What the author caught while testing** (fixed, documented in `docs/03-deviations.md`): stories that started without introducing the hero, and choices whose next scene did not follow from them, because a scene shared by several paths only followed one of them. Both were fixed in the prompt and the data model.
 - **What these checks caught** (all fixed, all documented in `docs/03-deviations.md`):
   - an escaping rule (`\/*` still opens an Ink comment) and Ink choice tags that only work inside the brackets;
   - LLM stories with an unreachable ending or a choice to a non-existent scene (hence the graph checks, the scene list in the retry, a little reasoning, and warnings);

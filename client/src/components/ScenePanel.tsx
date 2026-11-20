@@ -196,6 +196,21 @@ export function ScenePanel({ story, scene, issues, onSelect, onPlayFrom }: Props
                     />
                   </label>
                 </div>
+                <label className="field">
+                  <span>Ce qui se passe ensuite (lu juste après le choix)</span>
+                  <input
+                    value={choice.outcome ?? ""}
+                    placeholder="Ex. : Milo propose un jeu, et les mésanges l'entraînent."
+                    onChange={(e) =>
+                      edit(
+                        (s) => updateChoice(s, scene.id, choice.id, { outcome: e.target.value }),
+                        {
+                          coalesceKey: ckey("outcome"),
+                        },
+                      )
+                    }
+                  />
+                </label>
                 <div className="field-row">
                   <label className="field">
                     <span>Mène à</span>

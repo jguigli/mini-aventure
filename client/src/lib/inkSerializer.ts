@@ -50,10 +50,17 @@ function choiceLine(choice: Choice, sceneIds: Set<string>): string {
   const emojiTag = choice.emoji.trim() ? ` #emoji: ${escapeInline(choice.emoji)}` : "";
   const label = `+ [${escapeInline(choice.label)}${emojiTag}]`;
   // Persistent "+" choices: they stay available when the reader comes back to a scene.
-  if (sceneIds.has(choice.targetSceneId)) return `${label} -> ${choice.targetSceneId}`;
   // Missing target (new choice, deleted scene): end the story here so the Ink still compiles.
   // The explorer then reports this scene as a dead end, and validateStory names the problem.
-  return `${label} -> END // destination manquante`;
+  const divert = sceneIds.has(choice.targetSceneId)
+    ? `-> ${choice.targetSceneId}`
+    : "-> END // destination manquante";
+  const outcome = choice.outcome?.trim();
+  if (!outcome) return `${label} ${divert}`;
+  // The outcome is printed right after the click, before the next scene ("branching and
+  // joining" in Ink). The divert goes on its own line: on the same line, Ink would glue the
+  // outcome and the next scene's first line into one paragraph.
+  return `${label} ${escapeInline(outcome)}\n  ${divert}`;
 }
 
 function sceneBlock(scene: Scene, sceneIds: Set<string>): string {

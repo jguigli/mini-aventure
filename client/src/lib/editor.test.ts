@@ -152,9 +152,14 @@ describe("applySceneRewrite", () => {
       text: "Nouveau texte.",
       // Even a proposal listing choices in another order cannot move an arrow.
       choices: [
-        { id: "c3", label: "Remonter", emoji: "🗼" },
-        { id: "c1", label: "Rendre aux vagues", emoji: "🌊" },
-        { id: "c2", label: "Garder", emoji: "🎒" },
+        { id: "c3", label: "Remonter", emoji: "🗼", outcome: "Elle remonte." },
+        {
+          id: "c1",
+          label: "Rendre aux vagues",
+          emoji: "🌊",
+          outcome: "Elle court vers les vagues.",
+        },
+        { id: "c2", label: "Garder", emoji: "🎒", outcome: "Elle le garde." },
       ],
       endingLabel: null,
     });
@@ -166,10 +171,10 @@ describe("applySceneRewrite", () => {
       text: "Nouveau texte.",
       ending: null,
     });
-    expect(crique.choices.map((c) => [c.id, c.label, c.targetSceneId])).toEqual([
-      ["c1", "Rendre aux vagues", "fin_lumiere"],
-      ["c2", "Garder", "fin_brume"],
-      ["c3", "Remonter", "sommet"],
+    expect(crique.choices.map((c) => [c.id, c.label, c.outcome, c.targetSceneId])).toEqual([
+      ["c1", "Rendre aux vagues", "Elle court vers les vagues.", "fin_lumiere"],
+      ["c2", "Garder", "Elle le garde.", "fin_brume"],
+      ["c3", "Remonter", "Elle remonte.", "sommet"],
     ]);
     expect(story.scenes.find((s) => s.id === "crique")!.title).toBe("Le coquillage qui chante"); // input untouched
   });

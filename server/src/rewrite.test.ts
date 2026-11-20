@@ -17,9 +17,19 @@ const criqueRewrite = (over: Partial<SceneRewrite> = {}): SceneRewrite => ({
   mood: "mystere",
   text: "Lina s'agenouille près d'une flaque. Un coquillage y vibre doucement.",
   choices: [
-    { id: "c1", label: "Rendre le coquillage aux vagues", emoji: "🌊" },
-    { id: "c2", label: "Le cacher dans sa poche", emoji: "🎒" },
-    { id: "c3", label: "Remonter au phare", emoji: "🗼" },
+    {
+      id: "c1",
+      label: "Rendre le coquillage aux vagues",
+      emoji: "🌊",
+      outcome: "Lina court vers l'écume.",
+    },
+    {
+      id: "c2",
+      label: "Le cacher dans sa poche",
+      emoji: "🎒",
+      outcome: "Lina glisse le coquillage dans sa poche.",
+    },
+    { id: "c3", label: "Remonter au phare", emoji: "🗼", outcome: "Lina remonte vers le phare." },
   ],
   endingLabel: null,
   ...over,

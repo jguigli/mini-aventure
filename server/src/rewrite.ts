@@ -62,6 +62,7 @@ function tidy(variant: SceneRewrite): SceneRewrite {
       ...c,
       label: c.label.trim(),
       emoji: normalizeEmoji(c.emoji),
+      outcome: c.outcome.trim(),
     })),
     endingLabel: variant.endingLabel?.trim() ?? null,
   };

@@ -427,3 +427,25 @@ Each entry gives: **Spec** (what 02 says) → **Done** (what was implemented) �
 
 ### Third-party run, simulated
 - **Done:** the project's files (tracked and new, without `node_modules`, `.env` or build output) were copied to an empty folder, and the README was followed exactly: `make install`, `make env`, `make test` (160 passed), `make build`, `make dev`, all **with no key**. The home screen explains the missing key, and the whole demo path (map, checks, undo, Reader, both endings, exports, import, inkle example, axe audit, keyboard scenario) runs with no errors. Generation and rewrite need a key; they were validated with real calls in steps 4, 5 and 9.
+
+---
+
+## After step 10 — Feedback from testing
+
+### The first scene must introduce the story
+- **Observed by the author:** with the idea « Un enfant parle aux animaux et s'aventure dans la forêt pour étudier son don », the story was generated correctly, but in Lecture it started straight into the action. The hero, « Nora », was named without being introduced. The context existed only in `plan.summary`, which is never shown to the reader (and often reveals the endings).
+- **Done:** one rule added to the generation prompt (`server/src/prompts.ts`, section ÉCRITURE): the starting scene is a real introduction. It presents the hero (first name and an endearing detail), the place, and what starts the adventure, before the first choice. It may have one sentence more than the other scenes. A unit test checks that the rule is in the prompt.
+- **Not done (considered):** an `intro` field written by the LLM and emitted in the Ink before the first scene, and a cover page in Lecture (title, intro, « Commencer »). The author chose the prompt fix alone, and will check it by generating new stories.
+- **Workaround for stories already generated:** select the first scene and use « ✨ Retravailler » with an instruction such as « Présente Nora : qui elle est, où elle vit, et son don pour parler aux animaux ».
+
+### Choices must make sense with what follows: a per-choice "outcome"
+- **Observed by the author:** in a generated story, choosing « Proposer un jeu » led to a scene where squirrels listen to a story. The scene had been written as the follow-up of **another** choice (« Appeler les écureuils ») that led to the same scene.
+- **Verified:** one real generation with the same idea, listing every choice that leads to each scene next to the scene's text. **3 of 6 scenes were reached by several choices**, and their text followed only one of them (e.g. « Écouter les feuilles » led to « Un écureuil saute près de l'eau. Il a perdu des noisettes… »). Some single-entry choices did not match their target either (« Suivre les traces » → « Une chouette l'appelle »).
+- **Cause:** the model writes a choice's label before the scene it leads to, and a scene shared by several paths cannot follow from all of them at once. Nothing linked "what I chose" to "what I read next".
+- **Done:** the idiomatic Ink answer to branching and joining.
+  - **Schema:** each LLM choice has an `outcome`, one sentence telling what happens right after the choice and leading into the target. The field order (`id`, `targetSceneId`, `label`, `emoji`, `outcome`) makes the model decide the target first. `outcome` is optional in the app model (choices added in the editor, older stories).
+  - **Serializer:** `+ [label #emoji: …] outcome` with `-> target` **on the next line**. On the same line, inkjs glues the outcome and the next scene's first line into one paragraph (checked).
+  - **Prompt:** decide the target first; label, outcome and target must form a logical sequence; a scene reached by several choices must not assume a specific one. The rewrite prompt and schema include the outcome too.
+  - **Reader:** lines printed before the scene's `# scene:` tag are the **transition**, shown in italics above the next scene. **Editor:** a « Ce qui se passe ensuite » field per choice. **Example story:** an outcome for each of its 12 choices (`.ink` regenerated).
+- **Checked:** unit tests (the outcome is printed after the click as its own line and is escaped; the transition is split from the scene; a missing target still compiles; the prompt rules) and **one real generation** with the same idea. 0 empty outcomes, 5 of 7 scenes reached by several paths, and every outcome bridges its choice to a neutral shared scene (e.g. « Offrir un biscuit » → « Noé partage son goûter, puis suit l'eau. » → « La source clapote entre les pierres… »).
+- **Limit:** coherence is asked of the model and made possible by the structure, but it is not measured by code. An AI coherence review (spec bonus 2) would be the next step.

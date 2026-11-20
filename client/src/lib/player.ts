@@ -18,6 +18,11 @@ export interface Passage {
   sceneTitle: string | null;
   emoji: string | null;
   mood: string | null;
+  /**
+   * Text printed before the scene starts: the outcome of the choice just made (a transition).
+   * Empty at the start, or for a passage without our scene tags.
+   */
+  transition: string[];
   paragraphs: string[];
   choices: PassageChoice[];
   /** Set when the story ended on one of our endings. */
@@ -48,12 +53,17 @@ function readPassage(story: InkStory, options: PlayOptions, fromKnot: string | n
   const before = visits();
   const paragraphs: string[] = [];
   const tags: string[] = [];
+  // Index of the first paragraph of the scene (the line carrying its `# scene:` tag).
+  // Lines before it are the transition: the outcome of the choice just made.
+  let sceneStart = -1;
   let error: string | null = null;
   try {
     while (story.canContinue) {
       const line = story.Continue()?.trim();
+      const lineTags = story.currentTags ?? [];
+      if (sceneStart === -1 && tagValue(lineTags, "scene")) sceneStart = paragraphs.length;
       if (line) paragraphs.push(line);
-      tags.push(...(story.currentTags ?? []));
+      tags.push(...lineTags);
     }
   } catch (e) {
     error = e instanceof Error ? e.message : String(e); // inkjs throws runtime errors
@@ -82,7 +92,8 @@ function readPassage(story: InkStory, options: PlayOptions, fromKnot: string | n
     sceneTitle: tagValue(tags, "scene_title"),
     emoji: tagValue(tags, "emoji"),
     mood: tagValue(tags, "mood"),
-    paragraphs,
+    transition: sceneStart > 0 ? paragraphs.slice(0, sceneStart) : [],
+    paragraphs: sceneStart > 0 ? paragraphs.slice(sceneStart) : paragraphs,
     choices,
     ending: endingKind ? { kind: endingKind, label: tagValue(tags, "ending_label") ?? "" } : null,
     endingKey,

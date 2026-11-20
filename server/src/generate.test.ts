@@ -110,6 +110,11 @@ describe("prompts", () => {
     expect(SYSTEM_PROMPT).toContain("4 à 6 scènes narratives");
     expect(SYSTEM_PROMPT).toContain("2 à 3 choix");
     expect(SYSTEM_PROMPT).toContain("TOUJOURS en français");
+    // The first scene must introduce the hero, the place and what starts the adventure.
+    expect(SYSTEM_PROMPT).toMatch(/scène de départ est une vraie introduction.*héros.*lieu/);
+    // Choices must make sense with what follows: target first, then label + outcome.
+    expect(SYSTEM_PROMPT).toContain("décide d'abord sa destination");
+    expect(SYSTEM_PROMPT).toContain("ne doit pas supposer un choix précis");
     expect(SYSTEM_PROMPT).toMatch(/Mots interdits.*not.*function/);
   });
 

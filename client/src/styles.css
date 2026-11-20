@@ -1391,3 +1391,17 @@ h1 {
 h2[tabindex="-1"]:focus:not(:focus-visible) {
   outline: none;
 }
+
+/* Outcome of the choice just made: a short transition above the next scene. */
+.reader-transition {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-left: 4px solid var(--accent-soft);
+  font-style: italic;
+  color: var(--muted);
+  text-align: left;
+}
+
+.reader-transition p {
+  margin: 0;
+}

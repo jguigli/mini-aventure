@@ -136,7 +136,9 @@ export function applySceneRewrite(story: Story, sceneId: string, rewrite: SceneR
     text: rewrite.text,
     choices: scene.choices.map((choice) => {
       const proposed = rewrite.choices.find((c) => c.id === choice.id);
-      return proposed ? { ...choice, label: proposed.label, emoji: proposed.emoji } : choice;
+      return proposed
+        ? { ...choice, label: proposed.label, emoji: proposed.emoji, outcome: proposed.outcome }
+        : choice;
     }),
     ending: scene.ending
       ? { ...scene.ending, label: rewrite.endingLabel ?? scene.ending.label }

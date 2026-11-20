@@ -15,8 +15,20 @@
       "mood": "mystere",
       "text": "Chaque soir, Lina allume la lanterne du vieux phare. Ce soir, une voix douce monte de la mer. Elle répète son prénom, encore et encore. Le vent sent le sel et le secret.",
       "choices": [
-        { "id": "c1", "label": "Monter au sommet", "emoji": "🪜", "targetSceneId": "sommet" },
-        { "id": "c2", "label": "Descendre à la crique", "emoji": "🏖️", "targetSceneId": "crique" }
+        {
+          "id": "c1",
+          "label": "Monter au sommet",
+          "emoji": "🪜",
+          "targetSceneId": "sommet",
+          "outcome": "Lina grimpe l'escalier en colimaçon jusqu'à la lanterne."
+        },
+        {
+          "id": "c2",
+          "label": "Descendre à la crique",
+          "emoji": "🏖️",
+          "targetSceneId": "crique",
+          "outcome": "Lina descend le sentier glissant jusqu'à la petite crique."
+        }
       ],
       "ending": null
     },
@@ -31,15 +43,23 @@
           "id": "c1",
           "label": "Faire signe avec la lanterne",
           "emoji": "🏮",
-          "targetSceneId": "signal"
+          "targetSceneId": "signal",
+          "outcome": "Lina saisit la poignée de la lanterne et la tourne vers la mer."
         },
         {
           "id": "c2",
           "label": "Ouvrir le carnet du grand-père",
           "emoji": "📓",
-          "targetSceneId": "carnet"
+          "targetSceneId": "carnet",
+          "outcome": "Lina sort le vieux carnet du tiroir de la salle de veille."
         },
-        { "id": "c3", "label": "Courir vers les rochers", "emoji": "🪨", "targetSceneId": "crique" }
+        {
+          "id": "c3",
+          "label": "Courir vers les rochers",
+          "emoji": "🪨",
+          "targetSceneId": "crique",
+          "outcome": "Lina dévale l'escalier et court vers les rochers."
+        }
       ],
       "ending": null
     },
@@ -54,15 +74,23 @@
           "id": "c1",
           "label": "Porter le coquillage jusqu'aux vagues",
           "emoji": "🌊",
-          "targetSceneId": "fin_lumiere"
+          "targetSceneId": "fin_lumiere",
+          "outcome": "Lina serre le coquillage contre elle et avance dans l'écume."
         },
         {
           "id": "c2",
           "label": "Le garder dans sa poche",
           "emoji": "🎒",
-          "targetSceneId": "fin_brume"
+          "targetSceneId": "fin_brume",
+          "outcome": "Lina glisse le coquillage dans sa poche et s'assoit sur un rocher."
         },
-        { "id": "c3", "label": "Remonter au sommet", "emoji": "🗼", "targetSceneId": "sommet" }
+        {
+          "id": "c3",
+          "label": "Remonter au sommet",
+          "emoji": "🗼",
+          "targetSceneId": "sommet",
+          "outcome": "Lina remonte au sommet, le cœur battant."
+        }
       ],
       "ending": null
     },
@@ -73,12 +101,19 @@
       "mood": "calme",
       "text": "Lina feuillette le carnet de son grand-père, l'ancien gardien. Un dessin montre une sirène enfermée dans un coquillage. Une note dit : « Celle qui chante doit retrouver la marée haute. »",
       "choices": [
-        { "id": "c1", "label": "Filer à la crique", "emoji": "🔦", "targetSceneId": "crique" },
+        {
+          "id": "c1",
+          "label": "Filer à la crique",
+          "emoji": "🔦",
+          "targetSceneId": "crique",
+          "outcome": "Lina attrape sa lampe et file vers la crique."
+        },
         {
           "id": "c2",
           "label": "Attendre le lever du jour",
           "emoji": "🛏️",
-          "targetSceneId": "fin_brume"
+          "targetSceneId": "fin_brume",
+          "outcome": "Lina referme le carnet et décide d'attendre le matin."
         }
       ],
       "ending": null
@@ -94,13 +129,15 @@
           "id": "c1",
           "label": "Rejoindre la lueur à la crique",
           "emoji": "🥾",
-          "targetSceneId": "crique"
+          "targetSceneId": "crique",
+          "outcome": "Lina court vers le rivage, là où brille la lueur."
         },
         {
           "id": "c2",
           "label": "Attendre la prochaine marée",
           "emoji": "⏳",
-          "targetSceneId": "fin_brume"
+          "targetSceneId": "fin_brume",
+          "outcome": "Lina s'assoit et regarde la mer descendre."
         }
       ],
       "ending": null
@@ -112,7 +149,10 @@
       "mood": "joie",
       "text": "Lina pose le coquillage sur la vague. Une sirène minuscule en jaillit en riant. Depuis, le phare brille d'une lueur verte les nuits de pleine lune.",
       "choices": [],
-      "ending": { "kind": "A", "label": "La voix libérée" }
+      "ending": {
+        "kind": "A",
+        "label": "La voix libérée"
+      }
     },
     {
       "id": "fin_brume",
@@ -121,7 +161,10 @@
       "mood": "sombre",
       "text": "La marée se retire et la voix s'éteint doucement. Au matin, il ne reste qu'un coquillage silencieux. Lina le pose près de la lanterne, en espérant l'entendre un jour.",
       "choices": [],
-      "ending": { "kind": "B", "label": "La voix perdue" }
+      "ending": {
+        "kind": "B",
+        "label": "La voix perdue"
+      }
     }
   ]
 }

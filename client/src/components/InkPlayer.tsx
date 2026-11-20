@@ -105,6 +105,13 @@ export function InkPlayer({
         {title && <p className="reader-story-title">{title}</p>}
 
         <div aria-live="polite">
+          {passage.transition.length > 0 && (
+            <div className="reader-transition">
+              {passage.transition.map((line, i) => (
+                <p key={i}>{line}</p>
+              ))}
+            </div>
+          )}
           {passage.emoji && (
             <p className="reader-emoji" aria-hidden="true">
               {passage.emoji}
