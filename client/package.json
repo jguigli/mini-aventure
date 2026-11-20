@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "inkjs": "^2.4.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

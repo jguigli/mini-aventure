@@ -1,0 +1,127 @@
+{
+  "plan": {
+    "summary": "Lina, jeune gardienne de phare, entend une voix monter de la mer. En explorant le phare et la crique, elle découvre qu'une petite sirène est prisonnière d'un coquillage et doit retrouver la marée haute.",
+    "endingA": "Lina rend le coquillage à la mer à temps : la sirène est libérée et le phare brille d'une lumière nouvelle.",
+    "endingB": "Lina hésite trop longtemps : la marée se retire, la voix s'éteint, et il ne reste qu'un coquillage silencieux, plein d'espoir."
+  },
+  "title": "Le phare qui murmure",
+  "readingLevel": "11-12",
+  "startSceneId": "phare",
+  "scenes": [
+    {
+      "id": "phare",
+      "title": "La voix dans la nuit",
+      "emoji": "🗼",
+      "mood": "mystere",
+      "text": "Chaque soir, Lina allume la lanterne du vieux phare. Ce soir, une voix douce monte de la mer. Elle répète son prénom, encore et encore. Le vent sent le sel et le secret.",
+      "choices": [
+        { "id": "c1", "label": "Monter au sommet", "emoji": "🪜", "targetSceneId": "sommet" },
+        { "id": "c2", "label": "Descendre à la crique", "emoji": "🏖️", "targetSceneId": "crique" }
+      ],
+      "ending": null
+    },
+    {
+      "id": "sommet",
+      "title": "La lueur verte",
+      "emoji": "🔭",
+      "mood": "tension",
+      "text": "Au sommet, Lina pointe sa longue-vue vers les vagues. Une lueur verte danse sous l'eau, près des rochers. La voix devient plus forte, presque suppliante.",
+      "choices": [
+        {
+          "id": "c1",
+          "label": "Faire signe avec la lanterne",
+          "emoji": "🏮",
+          "targetSceneId": "signal"
+        },
+        {
+          "id": "c2",
+          "label": "Ouvrir le carnet du grand-père",
+          "emoji": "📓",
+          "targetSceneId": "carnet"
+        },
+        { "id": "c3", "label": "Courir vers les rochers", "emoji": "🪨", "targetSceneId": "crique" }
+      ],
+      "ending": null
+    },
+    {
+      "id": "crique",
+      "title": "Le coquillage qui chante",
+      "emoji": "🐚",
+      "mood": "mystere",
+      "text": "Les galets crissent sous les bottes de Lina. Dans une flaque, un coquillage nacré vibre comme un cœur. La voix sort de là, claire et fragile.",
+      "choices": [
+        {
+          "id": "c1",
+          "label": "Porter le coquillage jusqu'aux vagues",
+          "emoji": "🌊",
+          "targetSceneId": "fin_lumiere"
+        },
+        {
+          "id": "c2",
+          "label": "Le garder dans sa poche",
+          "emoji": "🎒",
+          "targetSceneId": "fin_brume"
+        },
+        { "id": "c3", "label": "Remonter au sommet", "emoji": "🗼", "targetSceneId": "sommet" }
+      ],
+      "ending": null
+    },
+    {
+      "id": "carnet",
+      "title": "Le carnet du gardien",
+      "emoji": "📓",
+      "mood": "calme",
+      "text": "Lina feuillette le carnet de son grand-père, l'ancien gardien. Un dessin montre une sirène enfermée dans un coquillage. Une note dit : « Celle qui chante doit retrouver la marée haute. »",
+      "choices": [
+        { "id": "c1", "label": "Filer à la crique", "emoji": "🔦", "targetSceneId": "crique" },
+        {
+          "id": "c2",
+          "label": "Attendre le lever du jour",
+          "emoji": "🛏️",
+          "targetSceneId": "fin_brume"
+        }
+      ],
+      "ending": null
+    },
+    {
+      "id": "signal",
+      "title": "Trois éclats de lumière",
+      "emoji": "🏮",
+      "mood": "tension",
+      "text": "Lina fait clignoter la lanterne trois fois. Sous l'eau, la lueur verte répond, puis glisse vers le rivage. Mais la marée commence déjà à descendre.",
+      "choices": [
+        {
+          "id": "c1",
+          "label": "Rejoindre la lueur à la crique",
+          "emoji": "🥾",
+          "targetSceneId": "crique"
+        },
+        {
+          "id": "c2",
+          "label": "Attendre la prochaine marée",
+          "emoji": "⏳",
+          "targetSceneId": "fin_brume"
+        }
+      ],
+      "ending": null
+    },
+    {
+      "id": "fin_lumiere",
+      "title": "La voix libérée",
+      "emoji": "☀️",
+      "mood": "joie",
+      "text": "Lina pose le coquillage sur la vague. Une sirène minuscule en jaillit en riant. Depuis, le phare brille d'une lueur verte les nuits de pleine lune.",
+      "choices": [],
+      "ending": { "kind": "A", "label": "La voix libérée" }
+    },
+    {
+      "id": "fin_brume",
+      "title": "La voix perdue",
+      "emoji": "🌫️",
+      "mood": "sombre",
+      "text": "La marée se retire et la voix s'éteint doucement. Au matin, il ne reste qu'un coquillage silencieux. Lina le pose près de la lanterne, en espérant l'entendre un jour.",
+      "choices": [],
+      "ending": { "kind": "B", "label": "La voix perdue" }
+    }
+  ]
+}
