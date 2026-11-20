@@ -38,6 +38,7 @@ Contraintes : 4 h de travail en tout, simplicité, réutilisation de briques exi
 
 ## Langue
 - Tout est **en français** : l'interface, les messages d'erreur, les prompts et les histoires générées.
+- Exceptions, en anglais : les messages de commit, le `README.md` et les docs d'étape `docs/steps/`.
 - Même si l'auteur saisit son idée dans une autre langue, l'histoire est **toujours générée en français** (consigne explicite dans le prompt système).
 
 ## Clé API OpenAI et sécurité
@@ -155,15 +156,17 @@ Le phare brille à nouveau.
 ## Règles de travail
 - Avance **étape par étape** ; ne commence pas l'étape suivante sans que je le demande.
 - À la fin de chaque étape : liste des fichiers créés ou modifiés, commandes pour tester, limites connues.
-- **Git : tu ne lances jamais `git add`, `git commit` ni `git push` toi-même.** C'est moi qui versionne. À la fin de chaque étape, écris-moi un bloc de commandes prêt à copier-coller, avec des chemins explicites (pas de `git add .`, pour ne jamais embarquer `.env` par erreur) et un message de commit clair au format *Conventional Commits*, par exemple :
+- **Git : tu ne lances jamais `git add`, `git commit` ni `git push` toi-même.** C'est moi qui versionne. À la fin de chaque étape, écris-moi un bloc de commandes prêt à copier-coller, avec des chemins explicites (pas de `git add .`, pour ne jamais embarquer `.env` par erreur) et un message de commit clair **en anglais** au format *Conventional Commits*, par exemple :
   ```bash
   git add shared/types.ts client/src/lib/inkSerializer.ts client/src/lib/inkSerializer.test.ts
-  git commit -m "feat(ink): sérialiseur JSON vers Ink et tests"
+  git commit -m "feat(ink): JSON to Ink serializer with tests"
   ```
   Avant ce bloc, rappelle-moi de vérifier les critères d'acceptation de l'étape.
 - Garde les fonctions du cœur **pures et testées** (sérialiseur, explorateur, layout).
 - Si un point de la doc d'une bibliothèque est incertain, vérifie-le plutôt que de deviner, et signale-le.
-- **Un `README.md` à la racine est obligatoire.** Crée-le dès l'étape 1 (installation, configuration de la clé, lancement), complète-le à chaque étape (fonctionnalités, arbitrages, limites), puis finalise-le à l'étape 10.
+- **Une doc par étape** : à la fin de chaque étape, écris en anglais `docs/steps/NN-<slug>.md` (objectif, fonctionnement, fichiers, décisions et écarts avec ce document, points de doc vérifiés, tests, limites, bloc git). Le fichier fait partie du bloc `git add` de l'étape. Le format détaillé est dans `CLAUDE.md`.
+- **Un `Makefile` à la racine** est le point d'entrée pour lancer le projet. Il est créé à l'étape 1 et complété au fil des étapes.
+- **Un `README.md` à la racine est obligatoire, rédigé en anglais.** Crée-le dès l'étape 1 (installation, configuration de la clé, lancement), complète-le à chaque étape (fonctionnalités, arbitrages, limites), puis finalise-le à l'étape 10.
 
 ---
 
@@ -174,10 +177,11 @@ Le phare brille à nouveau.
 - Crée le monorepo (npm workspaces), les deux applications, `shared/` avec l'alias `@shared/*`, les scripts `dev` et `test`.
 - Un serveur Express avec `GET /api/health` ; le client affiche le résultat de ce test via le proxy Vite.
 - `server/.env.example`, `.gitignore` (avec `.env`), ESLint et Prettier minimaux.
+- `Makefile` avec une cible `help` par défaut, plus `install`, `env` (copie `.env.example` vers `server/.env` **uniquement s'il n'existe pas**), `dev`, `test`, `lint`, `format`, `build` et `clean`. Chaque cible appelle un script npm et reste une ligne simple.
 - Premier `README.md` : prérequis, `npm install`, **configuration de ma clé OpenAI** (copier `.env.example` vers `.env` et y coller la clé), `npm run dev`.
 - `GET /api/health` indique aussi si la clé est configurée (`{ ok: true, openaiKey: true|false }`), sans jamais l'afficher.
 
-**Acceptation** : `npm install && npm run dev` lance les deux ; un fichier de `shared/` est importé avec succès côté client et côté serveur ; une fois ma clé collée dans `server/.env`, la page affiche « API OK, clé OpenAI configurée ».
+**Acceptation** : `make install && make dev` lance les deux ; un fichier de `shared/` est importé avec succès côté client et côté serveur ; une fois ma clé collée dans `server/.env`, la page affiche « API OK, clé OpenAI configurée ».
 
 ## Étape 2 — Cœur Ink : sérialiseur, compilation et exemple
 - `shared/schema.ts` : les schémas zod du modèle de données.
