@@ -119,7 +119,7 @@ Every difference with the original spec, and why, is in [`docs/03-deviations.md`
   - generation and rewrite workflows with a **fake model** (retry, warnings, locked scene, structure checks);
   - undo history, autosave, layout, edits, player, import/export.
 - **In the browser**, each step was also checked end to end with Playwright driving Chrome (scripts kept outside the repo): the acceptance scenarios of steps 5 to 10, an axe-core accessibility audit of every screen, and a keyboard-only scenario.
-- **Real OpenAI calls** were kept few and logged in the step docs: about 10 calls in total, around 9 cents.
+- **Real OpenAI calls** were kept few and logged in the step docs: about 14 calls in total, around 15 cents, including a final check of the French-only rule, a prompt-injection attempt, a violent idea and a rewrite.
 
 ## Built with AI, and how it was checked
 
