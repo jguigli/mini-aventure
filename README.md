@@ -6,9 +6,28 @@ A local web app to create short interactive adventures for readers aged 8 to 15,
 
 **Guiding principle: the LLM proposes, the code verifies, the author decides.**
 
-| Create                                     | Edit on the map                       | Read                              |
-| ------------------------------------------ | ------------------------------------- | --------------------------------- |
-| ![Creation screen](docs/images/create.png) | ![Map editor](docs/images/editor.png) | ![Reader](docs/images/reader.png) |
+<p align="center">
+  <img src="docs/images/editor.png" alt="The map editor: scenes as coloured cards linked by arrows, the quick test path lit in orange, and the side panel with the AI rewrite actions" width="900">
+  <br>
+  <em>The editor: each scene is a card, each choice an arrow. The quick test lights up the path taken, and the side panel edits the selected scene or reworks it with the AI.</em>
+</p>
+
+<table>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="docs/images/create.png" alt="Creation screen: an idea field, three reading-level pills and the Generate button">
+      <br>
+      <strong>Create</strong><br>
+      <em>An idea, a reading level (8-10, 11-12, 13-15), and the AI drafts the story. Or load the built-in example.</em>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="docs/images/reader.png" alt="Reader: a big emoji, the scene title and text, and the choices as large numbered buttons">
+      <br>
+      <strong>Read</strong><br>
+      <em>The Reader plays the compiled Ink: big emoji, text, choices as buttons (mouse or keys 1-9), both endings.</em>
+    </td>
+  </tr>
+</table>
 
 ## Quick start
 
@@ -23,10 +42,10 @@ Open `server/.env` and paste your key:
 
 ```dotenv
 OPENAI_API_KEY=sk-...
-OPENAI_MODEL=          # optional, defaults to gpt-5.4-mini
+OPENAI_MODEL=gpt-5.4-mini   # any model that supports structured outputs
 ```
 
-`server/.env` is ignored by git. The key is read by the server only and is never sent to the browser.
+`server/.env` is ignored by git. The key is read by the server only and is never sent to the browser. `OPENAI_MODEL` sets the model for generation and rewrites (if empty, `gpt-5.4-mini`). It is read at startup, so restart `make dev` after changing it. The server logs the model in use: `API prête sur http://localhost:3001 (modèle : …)`.
 
 ```bash
 make dev       # API on port 3001 + app on http://localhost:5173
