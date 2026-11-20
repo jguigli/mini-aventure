@@ -14,7 +14,8 @@ Work in progress, built step by step (see [`docs/steps/`](docs/steps/)). Deviati
 | ---- | ----------------------------------------------------------------------- | ------ |
 | 1    | Project skeleton, health check, Makefile                                | ✅     |
 | 2    | Ink core: zod schema, JSON → Ink serializer, compilation, example story | ✅     |
-| 3–10 | Explorer, generation, editor, reader, import/export, AI editing, polish | ⏳     |
+| 3    | Reachability explorer, structural validation, emoji checks              | ✅     |
+| 4–10 | Generation, editor, reader, import/export, AI editing, polish           | ⏳     |
 
 ## Requirements
 
@@ -108,6 +109,13 @@ Lina pose le coquillage sur la vague. …
 - The Ink always compiles, even mid-edit: a choice with a missing target ends the story and gets a warning instead of a compile error.
 
 The full example is in [`examples/le-phare.json`](examples/le-phare.json) and [`examples/le-phare.ink`](examples/le-phare.ink).
+
+## How the app checks a story
+
+Two independent checks. Neither one asks the LLM.
+
+1. **Structure** ([`shared/validate.ts`](shared/validate.ts), runs on the JSON): valid and unique ids, no Ink reserved words, existing targets, exactly two endings (A and B), 4 to 6 narrative scenes, 2 to 3 choices each, single emojis. The server uses it to retry the LLM once, and the editor shows the issues as warnings.
+2. **Reachability** ([`client/src/lib/explorer.ts`](client/src/lib/explorer.ts), runs on the compiled Ink): plays every path with inkjs. At each decision point it saves the state, tries each choice, and restores. A decision point already explored is skipped, which is what makes loops terminate, and a step budget is the safety net. It reports reached and unreached scenes, reached endings, dead ends and runtime errors. Because it plays the compiled Ink, it also works on imported `.ink` files.
 
 ## Design decisions so far
 

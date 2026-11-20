@@ -99,3 +99,51 @@ Each entry gives: **Spec** (what 02 says) → **Done** (what was implemented) �
 - **Spec:** "5 scenes and 2 endings".
 - **Done:** 5 narrative scenes + 2 endings (7 scenes). It includes **one deliberate loop** (`sommet` ↔ `crique`), the reason `+` choices are used. It will exercise the explorer's loop detection at step 3.
 - **`examples/le-phare.ink`** is generated from the JSON and kept in sync by a Vitest file snapshot. A serializer change that alters it fails the tests, and `npx vitest run -u` updates it.
+
+---
+
+## Step 3 — Reachability explorer and structural validation
+
+### One loop-detection key for every story
+- **Spec:** for generated stories, deduplicate on the `scene:` tag. For imported `.ink`, use `currentPathString` + the text of the offered choices.
+- **Done:** a single key for both cases: for each offered choice, its `sourcePath` (where the choice is written in the Ink) + its text.
+- **Why:**
+  - `currentPathString` is `null` once the story stops at choices (checked on inkjs 2.4), so it cannot identify a decision point. `choice.sourcePath` can (e.g. `cuisine.placard.0.7`).
+  - For generated stories (no variables), this key is equivalent to the scene tag, since one scene means one set of choices. One algorithm is simpler to explain and test.
+  - A test checks that comparing `state.ToJson()` instead makes 6 tests fail: the visit counters differ on every pass, so loops are never detected.
+
+### `compileInk` compiles with `countAllVisits: true`
+- **Spec:** n/a.
+- **Done:** `new CompilerOptions(null, [], true)`.
+- **Why:** by default inkjs only counts visits to knots that the story reads, so `VisitCountAtPathString` returned 0 everywhere. With the option on, the explorer knows which knots were reached in an imported `.ink` without `# scene:` tags. The cost is negligible.
+
+### Endings and dead ends in an imported `.ink`
+- **Spec:** an ending is identified by `currentPathString` before the last `Continue()`. A dead end is a story stopped by `DONE` without a clear ending, or a runtime error.
+- **Done:** in an imported `.ink`, **every** place where the story stops counts as an ending. It is identified by its knot (the knot whose visit count went up in that last segment). Only runtime errors count as dead ends.
+- **Why:** `END` and `DONE` cannot be told apart at runtime (both leave no choices and `canContinue = false`), and `currentPathString` is `null` at that point. For our generated stories nothing changes: an ending must carry `# ending:`, and anything else that stops is a dead end.
+
+### Explorer result has extra fields
+- **Spec:** `{ reachedScenes, reachedEndings, deadEnds, unreachedScenes, truncated }`.
+- **Done:** adds `runtimeErrors: string[]` (inkjs throws from `Continue()`, see step 2) and `steps: number`. The `opts.sceneIds` option gives the list of expected scenes. `knotNamesFromSource(source)` lists the knots of an imported `.ink` without its functions, because the compiled story does not mark which containers are functions.
+
+### Choice-level reachability is not reported separately
+- **Spec (01 recap):** "all choices are reachable".
+- **Done:** not a separate output.
+- **Why:** generated stories have no conditions, so a choice is offered exactly when its scene is reached. Unreached scenes cover it. A choice with a missing target is reported by `validateStory` and as a dead end by the explorer.
+
+### `validateStory`: extra checks, issue format
+- **Spec:** unique ids, existing targets, exactly 2 endings A and B, 4 to 6 narrative scenes, 2 to 3 choices, valid emojis.
+- **Done:** all of these, plus:
+  - Ink-valid scene ids and reserved words;
+  - unique choice ids within a scene;
+  - an ending has no choices, and a scene with no ending must have choices (dead end);
+  - the start scene exists and is not an ending;
+  - non-empty title, text, choice label and ending label;
+  - a choice that leads back to its own scene is reported.
+
+  Each issue is `{ sceneId?, choiceId?, message }`, with the message in French.
+- **Why:** these are the mistakes an LLM or a hurried edit actually makes. Each is cheap to check, and the message is precise enough to send back to the LLM.
+
+### Emoji helpers written now
+- **Spec:** step 4 (server-side normalization).
+- **Done:** `shared/emoji.ts` (`isValidEmoji`, `normalizeEmoji`, `normalizeStoryEmojis`) is written and tested now, because `validateStory` needs `isValidEmoji`. It works on graphemes (`Intl.Segmenter`), so `🏖️` and `👩‍🚀` count as one emoji.
